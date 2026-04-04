@@ -80,6 +80,30 @@ function setUploadFeedback(message, tone = "") {
   els.uploadFeedback.className = `upload-feedback${tone ? ` is-${tone}` : ""}`;
 }
 
+function getSelectedUploadLabel(files) {
+  if (files.length === 0) {
+    return "No file selected";
+  }
+
+  if (files.length === 1) {
+    const selected = files[0];
+    return selected.webkitRelativePath ? selected.webkitRelativePath : selected.name;
+  }
+
+  const rootNames = new Set(
+    files
+      .map((file) => file.webkitRelativePath || file.name)
+      .map((path) => path.split(/[\\/]/, 1)[0])
+      .filter(Boolean),
+  );
+
+  if (rootNames.size === 1) {
+    return `${files.length} files from ${Array.from(rootNames)[0]}`;
+  }
+
+  return `${files.length} files selected`;
+}
+
 function getModelDisplay(provider, model) {
   if (provider === "openai") {
     return model || "gpt-5-mini";
@@ -273,18 +297,20 @@ async function runOrchestration(event) {
 }
 
 async function uploadArchive() {
-  const file = els.repoArchive.files?.[0];
-  if (!file) {
+  const files = Array.from(els.repoArchive.files || []);
+  if (files.length === 0) {
     setStatus("Choose a file first", "error");
     setUploadFeedback("Choose a file or archive first.", "error");
     return;
   }
 
   const formData = new FormData();
-  formData.append("file", file);
+  files.forEach((file) => {
+    formData.append("files", file, file.webkitRelativePath || file.name);
+  });
   setLoading(true);
   setStatus("Uploading repository...", "running");
-  setUploadFeedback(`Uploading ${file.name}...`, "busy");
+  setUploadFeedback(`Uploading ${getSelectedUploadLabel(files)}...`, "busy");
 
   try {
     const response = await fetch("/upload", {
@@ -306,7 +332,7 @@ async function uploadArchive() {
     }
     els.repositoryPath.value = data.repository_path;
     if (els.repoArchiveName) {
-      els.repoArchiveName.textContent = `${data.original_filename} ready`;
+      els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
     setUploadFeedback("Upload complete. Repository path has been filled in.", "success");
     setStatus(`Uploaded ${data.original_filename}`);
@@ -325,12 +351,12 @@ async function uploadArchive() {
 }
 
 function handleArchiveSelection() {
-  const file = els.repoArchive.files?.[0];
+  const files = Array.from(els.repoArchive.files || []);
   if (!els.repoArchiveName) {
     return;
   }
-  els.repoArchiveName.textContent = file ? `${file.name} selected` : "No file selected";
-  if (file) {
+  els.repoArchiveName.textContent = getSelectedUploadLabel(files);
+  if (files.length > 0) {
     setUploadFeedback("File selected. Uploading now...", "busy");
     void uploadArchive();
   } else {

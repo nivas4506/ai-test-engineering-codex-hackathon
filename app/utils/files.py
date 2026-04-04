@@ -121,6 +121,24 @@ def save_uploaded_input(filename: str, content: bytes) -> tuple[str, Path]:
     return upload_id, extracted_dir
 
 
+def save_uploaded_bundle(files: list[tuple[str, bytes]]) -> tuple[str, Path]:
+    if not files:
+        raise ValueError("No files were uploaded.")
+
+    upload_id = uuid.uuid4().hex[:12]
+    upload_root = ensure_directory(UPLOADS_DIR / upload_id)
+    repo_root = ensure_directory(upload_root / "repo")
+
+    for relative_name, content in files:
+        relative_path = _safe_relative_path(relative_name)
+        target_file = repo_root / relative_path
+        ensure_directory(target_file.parent)
+        target_file.write_bytes(content)
+
+    _validate_uploaded_repository(repo_root)
+    return upload_id, repo_root
+
+
 def _extract_zip_archive(archive_path: Path, extracted_dir: Path) -> None:
     with zipfile.ZipFile(archive_path) as archive:
         for member in archive.infolist():
@@ -144,6 +162,15 @@ def _normalize_extracted_root(extracted_dir: Path) -> Path:
     if len(children) == 1 and children[0].is_dir():
         return children[0]
     return extracted_dir
+
+
+def _safe_relative_path(raw_path: str) -> Path:
+    relative_path = Path(raw_path)
+    if relative_path.is_absolute() or relative_path.drive or relative_path.root:
+        raise ValueError("Uploaded files must not contain absolute paths.")
+    if any(part == ".." for part in relative_path.parts):
+        raise ValueError("Uploaded files contain unsafe parent paths.")
+    return relative_path
 
 
 def _validate_uploaded_repository(path: Path) -> None:

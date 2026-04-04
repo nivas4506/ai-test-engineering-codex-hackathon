@@ -25,6 +25,7 @@ from app.services.orchestrator import OrchestratorService
 from app.services.openai_test_writer import OpenAITestWriter
 from app.utils.files import (
     create_run_directory,
+    save_uploaded_bundle,
     save_uploaded_input,
     snapshot_repository_metadata,
     write_json,
@@ -143,19 +144,36 @@ def get_profile_summary(current_user=Depends(get_current_user)):
 
 
 @router.post("/upload", response_model=UploadResponse)
-async def upload_repository(file: UploadFile = File(...), current_user=Depends(get_current_user)):
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="A file name is required for upload.")
+async def upload_repository(
+    files: list[UploadFile] | None = File(default=None),
+    file: UploadFile | None = File(default=None),
+    current_user=Depends(get_current_user),
+):
+    uploads = files or ([] if file is None else [file])
+    if not uploads:
+        raise HTTPException(status_code=400, detail="A file, archive, or folder upload is required.")
 
-    content = await file.read()
     try:
-        upload_id, repository_path = save_uploaded_input(file.filename, content)
+        if len(uploads) == 1:
+            first_upload = uploads[0]
+            if not first_upload.filename:
+                raise HTTPException(status_code=400, detail="A file name is required for upload.")
+            content = await first_upload.read()
+            upload_id, repository_path = save_uploaded_input(first_upload.filename, content)
+        else:
+            bundle_files: list[tuple[str, bytes]] = []
+            for upload in uploads:
+                if not upload.filename:
+                    raise HTTPException(status_code=400, detail="Each uploaded file must have a name.")
+                bundle_files.append((upload.filename, await upload.read()))
+            upload_id, repository_path = save_uploaded_bundle(bundle_files)
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
         raise HTTPException(status_code=500, detail="Failed to process upload.") from exc
 
-    return UploadResponse(upload_id=upload_id, repository_path=str(repository_path), original_filename=file.filename)
+    original_filename = uploads[0].filename or "uploaded-content"
+    return UploadResponse(upload_id=upload_id, repository_path=str(repository_path), original_filename=original_filename)
 
 
 @router.post("/analyze")

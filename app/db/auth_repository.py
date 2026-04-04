@@ -32,13 +32,21 @@ class AuthRepository:
 
     def get_user_by_token(self, token: str) -> UserAccount | None:
         with get_db_session() as session:
-            user_session = session.scalar(select(UserSession).where(UserSession.access_token == token))
+            # Use joinedload to fetch user in the same query
+            from sqlalchemy.orm import joinedload
+            user_session = session.scalar(
+                select(UserSession)
+                .options(joinedload(UserSession.user))
+                .where(UserSession.access_token == token)
+            )
             if user_session is None:
                 return None
             if user_session.expires_at.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
                 session.delete(user_session)
                 session.commit()
                 return None
+            # The session will close, but user object is already loaded.
+            # However, it's safer to return the UserAccount object as is OR ensure it's loaded.
             return user_session.user
 
     def create_session(self, user_id: int, access_token: str, expires_at: datetime) -> UserSession:

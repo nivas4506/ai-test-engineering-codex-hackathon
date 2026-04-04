@@ -96,17 +96,38 @@ class OpenAITestWriter:
         return self._run_prompt(instructions, prompt)
 
     def _run_prompt(self, instructions: str, prompt: str) -> str | None:
-        response = self._client.responses.create(
-            model=self.model,
-            instructions=instructions,
-            input=prompt,
-            reasoning={"effort": OPENAI_REASONING_EFFORT},
-        )
-        text = response.output_text.strip()
+        try:
+            # Use standard chat completions with reasoning parameters
+            response = self._client.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "developer", "content": instructions},
+                    {"role": "user", "content": prompt}
+                ],
+                reasoning_effort=OPENAI_REASONING_EFFORT if self.model == "gpt-5-mini" else None,
+                max_completion_tokens=4000
+            )
+            text = response.choices[0].message.content.strip()
+        except Exception as e:
+            # Fallback for models that might not support 'developer' role yet or other issues
+            try:
+                response = self._client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": instructions},
+                        {"role": "user", "content": prompt}
+                    ],
+                    max_completion_tokens=4000
+                )
+                text = response.choices[0].message.content.strip()
+            except Exception as e2:
+                print(f"OpenAI generation failed: {e2}")
+                return None
+
         if not text:
             return None
         if text.startswith("```"):
             text = text.split("\n", 1)[1]
-            if text.endswith("```"):
-                text = text[:-3]
+            if "```" in text:
+                text = text.rsplit("```", 1)[0]
         return text.strip() + "\n"

@@ -82,15 +82,15 @@
             <div class="upload-card">
               <div class="upload-copy">
                 <div class="section-kicker">Upload</div>
-                <p class="body-copy">Upload a repository archive or a single source file. The extracted path will be filled in automatically.</p>
+                <p class="body-copy">Upload a repository folder, a supported archive, or a single source file. The extracted path will be filled in automatically.</p>
               </div>
               <div class="upload-actions">
                 <div class="upload-picker">
-                  <input class="file-input" id="repo_archive" name="repo_archive" type="file" />
-                  <label class="button secondary file-picker" for="repo_archive">Choose and upload file</label>
+                  <input class="file-input" id="repo_archive" name="repo_archive" type="file" multiple webkitdirectory />
+                  <label class="button secondary file-picker" for="repo_archive">Choose folder, archive, or file</label>
                   <span class="file-meta" id="repo-archive-name">No file selected</span>
                 </div>
-                <div class="upload-feedback" id="upload-feedback">The upload starts as soon as you choose a file or archive.</div>
+                <div class="upload-feedback" id="upload-feedback">The upload starts as soon as you choose a folder, archive, or file.</div>
               </div>
             </div>
             <label>
