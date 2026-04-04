@@ -1,0 +1,13 @@
+.dist/
+.pytest_cache/
+__pycache__/
+*.py[cod]
+
+.venv/
+venv/
+env/
+
+workspace/runs/
+
+.DS_Store
+Thumbs.db

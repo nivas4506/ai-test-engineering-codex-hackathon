@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Enigneering Playbooks</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">TD</span>
+          <span>AI Test Enigneering</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/">Overview</a>
+          <a href="/agents">Agents</a>
+          <a class="active" href="/playbooks">Playbooks</a>
+          <a href="/reports">Reports</a>
+        </nav>
+      </header>
+
+      <section class="hero compact-hero">
+        <div class="hero-topline">
+          <div class="badge">Operator Workflows</div>
+          <div class="hero-chip">Repeatable execution patterns</div>
+        </div>
+        <div class="hero-copy">
+          <div class="eyebrow">Playbooks</div>
+          <h1>How teams run TestDebugger</h1>
+          <p>
+            Use focused playbooks to move from a cold repository to a usable execution report
+            without losing traceability across retries.
+          </p>
+        </div>
+      </section>
+
+      <section class="stack">
+        <article class="panel step-card">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Playbook A</div>
+              <h2>First-pass repository scan</h2>
+            </div>
+            <div class="panel-note">Best for new repos with no tests.</div>
+          </div>
+          <p>Run analysis, inspect the planner output, generate tests once, then review whether the module inventory looks sane before scaling up.</p>
+        </article>
+
+        <article class="panel step-card">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Playbook B</div>
+              <h2>Failure isolation loop</h2>
+            </div>
+            <div class="panel-note">Best for brittle or side-effect-heavy code.</div>
+          </div>
+          <p>Use balanced mode first. If generation overreaches, let the debugger shift into safe mode and compare the logs side by side in the report view.</p>
+        </article>
+
+        <article class="panel step-card">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Playbook C</div>
+              <h2>Demo-ready artifact export</h2>
+            </div>
+            <div class="panel-note">Best for hackathons and reviews.</div>
+          </div>
+          <p>Run orchestration against a sample repo, then open the report page to present iterations, generated files, and final status as a clean narrative.</p>
+        </article>
+      </section>
+    </main>
+  </body>
+  </html>

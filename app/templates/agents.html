@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Enigneering Agents</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">TD</span>
+          <span>AI Test Enigneering</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/">Overview</a>
+          <a class="active" href="/agents">Agents</a>
+          <a href="/playbooks">Playbooks</a>
+          <a href="/reports">Reports</a>
+        </nav>
+      </header>
+
+      <section class="hero compact-hero">
+        <div class="hero-topline">
+          <div class="badge">System Architecture</div>
+          <div class="hero-chip">5-part execution model</div>
+        </div>
+        <div class="hero-copy">
+          <div class="eyebrow">Multi-agent platform</div>
+          <h1>Agent Stack</h1>
+          <p>
+            TestDebugger splits code understanding, generation, execution, debugging,
+            and orchestration into focused roles so each stage can be observed and improved independently.
+          </p>
+        </div>
+      </section>
+
+      <section class="card-grid three-up">
+        <article class="panel feature-card">
+          <div class="section-kicker">01</div>
+          <h2>Planner</h2>
+          <p>Maps modules, risk areas, and test strategy before any files are generated.</p>
+          <ul class="plain-list">
+            <li>Repository scanning</li>
+            <li>Function inventory</li>
+            <li>Priority scoring</li>
+          </ul>
+        </article>
+        <article class="panel feature-card">
+          <div class="section-kicker">02</div>
+          <h2>Generator</h2>
+          <p>Produces test files with balanced and safe execution modes for iterative recovery.</p>
+          <ul class="plain-list">
+            <li>Pytest file generation</li>
+            <li>Edge-case coverage</li>
+            <li>Import/bootstrap support</li>
+          </ul>
+        </article>
+        <article class="panel feature-card">
+          <div class="section-kicker">03</div>
+          <h2>Executor</h2>
+          <p>Runs real pytest commands and keeps stdout, stderr, duration, and failure metadata.</p>
+          <ul class="plain-list">
+            <li>Real subprocess execution</li>
+            <li>Failure parsing</li>
+            <li>Artifact persistence</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="card-grid two-up">
+        <article class="panel feature-card">
+          <div class="section-kicker">04</div>
+          <h2>Debugger</h2>
+          <p>Inspects failing runs and lowers generation aggressiveness when the system made unsafe assumptions.</p>
+        </article>
+        <article class="panel feature-card">
+          <div class="section-kicker">05</div>
+          <h2>Orchestrator</h2>
+          <p>Coordinates the loop from analysis to final report and determines when to stop retrying.</p>
+        </article>
+      </section>
+    </main>
+  </body>
+  </html>

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Enigneering Reports</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">TD</span>
+          <span>AI Test Enigneering</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/">Overview</a>
+          <a href="/agents">Agents</a>
+          <a href="/playbooks">Playbooks</a>
+          <a class="active" href="/reports">Reports</a>
+        </nav>
+      </header>
+
+      <section class="hero compact-hero">
+        <div class="hero-topline">
+          <div class="badge">Reporting Surface</div>
+          <div class="hero-chip">Execution history + artifacts</div>
+        </div>
+        <div class="hero-copy">
+          <div class="eyebrow">Output model</div>
+          <h1>Final report anatomy</h1>
+          <p>
+            TestDebugger reports are designed to be shown to developers, judges, and reviewers without hiding the raw evidence behind the summary.
+          </p>
+        </div>
+      </section>
+
+      <section class="card-grid two-up">
+        <article class="panel feature-card">
+          <div class="section-kicker">What it contains</div>
+          <h2>Execution evidence</h2>
+          <ul class="plain-list">
+            <li>Run status and iteration count</li>
+            <li>Planner and generation history</li>
+            <li>Pytest stdout and stderr</li>
+            <li>Artifact file paths</li>
+          </ul>
+        </article>
+        <article class="panel feature-card">
+          <div class="section-kicker">Why it matters</div>
+          <h2>Decision-ready output</h2>
+          <ul class="plain-list">
+            <li>Separates passing runs from pipeline errors</li>
+            <li>Shows when the debugger intervened</li>
+            <li>Makes retries explainable</li>
+            <li>Keeps local artifacts inspectable</li>
+          </ul>
+        </article>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Current implementation</div>
+            <h2>Where to inspect generated reports</h2>
+          </div>
+          <div class="panel-note">Each run is stored under `workspace/runs/{run_id}`.</div>
+        </div>
+        <p class="body-copy">
+          Start from the Overview page to trigger orchestration, then inspect the JSON panel or open the persisted `final_report.json` from the local workspace for deeper review.
+        </p>
+      </section>
+    </main>
+  </body>
+  </html>

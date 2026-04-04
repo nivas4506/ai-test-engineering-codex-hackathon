@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Enigneering</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">TD</span>
+          <span>AI Test Enigneering</span>
+        </a>
+        <nav class="navlinks">
+          <a class="active" href="/">Overview</a>
+          <a href="/agents">Agents</a>
+          <a href="/playbooks">Playbooks</a>
+          <a href="/reports">Reports</a>
+        </nav>
+      </header>
+
+      <section class="hero">
+        <div class="hero-topline">
+          <div class="badge">Figma-inspired Liquid UI</div>
+          <div class="hero-chip">FastAPI + Real Pytest Loop</div>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <div class="eyebrow">Autonomous QA control surface</div>
+            <h1>AI Test Enigneering</h1>
+            <p>
+              Analyze a Python repository, generate tests, run real pytest execution,
+              and inspect the orchestration report in a single liquid-glass control surface.
+            </p>
+          </div>
+          <div class="hero-side">
+            <div class="hero-side-card">
+              <div class="section-kicker">Live Metrics</div>
+              <div class="hero-stats" id="metrics">
+                <div class="metric">
+                  <div class="metric-label">Run ID</div>
+                  <strong>waiting</strong>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Iterations</div>
+                  <strong>0</strong>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Tests</div>
+                  <strong>0</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Inputs</div>
+              <h2>Control Deck</h2>
+            </div>
+            <div class="panel-note">Point the runner at any Python repo.</div>
+          </div>
+          <form class="stack" id="orchestrate-form">
+            <label>
+              Repository path
+              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
+            </label>
+            <label>
+              Max retries
+              <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />
+            </label>
+            <div class="actions">
+              <button class="button" id="run-button" type="submit">Run orchestration</button>
+              <button class="button secondary" id="sample-button" type="button">Use sample repo</button>
+              <button class="button secondary" id="report-button" type="button">Reload report</button>
+            </div>
+          </form>
+          <div class="control-footer">
+            <div class="status-pill" id="run-status">Ready</div>
+            <div class="control-hint">Orchestration persists artifacts inside the local workspace.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Execution</div>
+              <h2>Iteration Timeline</h2>
+            </div>
+            <div class="panel-note">Each retry shows execution result and debugger diagnosis.</div>
+          </div>
+          <div class="timeline" id="timeline">
+            <div class="empty">Run the orchestrator to see live report data.</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="layout">
+        <div class="panel" id="summary">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Planner</div>
+              <h2>Run Summary</h2>
+            </div>
+            <div class="panel-note">Repository, planner, and generator overview.</div>
+          </div>
+          <div class="empty">Planner and generator summaries appear here.</div>
+        </div>
+        <div class="panel" id="logs">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Pytest Output</div>
+              <h2>Execution Logs</h2>
+            </div>
+            <div class="panel-note">Real stdout and stderr from the last run.</div>
+          </div>
+          <div class="empty">stdout and stderr will appear after a run.</div>
+        </div>
+      </section>
+
+      <section class="panel" id="json-output">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Artifacts</div>
+            <h2>Structured Report</h2>
+          </div>
+          <div class="panel-note">Full JSON payload for debugging and demos.</div>
+        </div>
+        <div class="empty">The full JSON report will render here.</div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+  </body>
+  </html>
