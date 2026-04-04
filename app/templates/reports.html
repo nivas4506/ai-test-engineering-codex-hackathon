@@ -3,73 +3,101 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Test Enigneering Reports</title>
+    <title>AI Test Engineering Reports</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topnav">
         <a class="brand" href="/">
-          <span class="brand-mark">TD</span>
-          <span>AI Test Enigneering</span>
+          <span class="brand-mark">ATE</span>
+          <span>AI Test Engineering</span>
         </a>
         <nav class="navlinks">
           <a href="/">Overview</a>
-          <a href="/agents">Agents</a>
-          <a href="/playbooks">Playbooks</a>
-          <a class="active" href="/reports">Reports</a>
+          <a href="/agents">How It Works</a>
+          <a href="/playbooks">What To Do</a>
+          <a class="active" href="/reports">Results</a>
+          <a href="/profile">Profile</a>
         </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
       </header>
 
       <section class="hero compact-hero">
         <div class="hero-topline">
-          <div class="badge">Reporting Surface</div>
+          <div class="badge">Simple results view</div>
           <div class="hero-chip">Execution history + artifacts</div>
         </div>
         <div class="hero-copy">
-          <div class="eyebrow">Output model</div>
-          <h1>Final report anatomy</h1>
+          <div class="eyebrow">Results page</div>
+          <h1>See your test results clearly</h1>
           <p>
-            TestDebugger reports are designed to be shown to developers, judges, and reviewers without hiding the raw evidence behind the summary.
+            This page shows whether the run worked, how many tries it took, and what the app found.
           </p>
         </div>
       </section>
 
-      <section class="card-grid two-up">
-        <article class="panel feature-card">
-          <div class="section-kicker">What it contains</div>
-          <h2>Execution evidence</h2>
-          <ul class="plain-list">
-            <li>Run status and iteration count</li>
-            <li>Planner and generation history</li>
-            <li>Pytest stdout and stderr</li>
-            <li>Artifact file paths</li>
-          </ul>
-        </article>
-        <article class="panel feature-card">
-          <div class="section-kicker">Why it matters</div>
-          <h2>Decision-ready output</h2>
-          <ul class="plain-list">
-            <li>Separates passing runs from pipeline errors</li>
-            <li>Shows when the debugger intervened</li>
-            <li>Makes retries explainable</li>
-            <li>Keeps local artifacts inspectable</li>
-          </ul>
-        </article>
-      </section>
-
-      <section class="panel">
+      <section class="panel wireframe-panel">
         <div class="panel-head">
           <div>
-            <div class="section-kicker">Current implementation</div>
-            <h2>Where to inspect generated reports</h2>
+            <div class="section-kicker">Page guide</div>
+            <h2>How to read this page</h2>
           </div>
-          <div class="panel-note">Each run is stored under `workspace/runs/{run_id}`.</div>
+          <div class="panel-note">Top: quick numbers. Left: all runs. Right: one selected run.</div>
         </div>
-        <p class="body-copy">
-          Start from the Overview page to trigger orchestration, then inspect the JSON panel or open the persisted `final_report.json` from the local workspace for deeper review.
-        </p>
+        <div class="wireframe-grid three-lane">
+          <article class="wire-block">
+            <span>Part 1</span>
+            <strong>Quick numbers</strong>
+            <p>These cards tell you the overall story in a few seconds.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 2</span>
+            <strong>All runs</strong>
+            <p>This list lets you switch between different saved runs.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 3</span>
+            <strong>Selected run</strong>
+            <p>This side shows the details for the run you clicked.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card-grid two-up dashboard-summary-grid" id="report-summary-cards">
+        <div class="empty">Loading recent run metrics...</div>
+      </section>
+
+      <section class="dashboard-shell">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Saved runs</div>
+              <h2>All recent runs</h2>
+            </div>
+            <div class="panel-note">Click any run to load it on the right.</div>
+          </div>
+          <div class="run-list" id="reports-run-list">
+            <div class="empty">Loading reports...</div>
+          </div>
+        </div>
+
+        <div class="panel selected-report-panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Selected run</div>
+              <h2>Easy details</h2>
+            </div>
+            <div class="panel-note">This area explains one run in plain language.</div>
+          </div>
+          <div id="selected-report-detail" class="body-copy">Select a run to inspect.</div>
+        </div>
       </section>
     </main>
+    <script src="/static/reports.js"></script>
+    <script src="/static/session.js"></script>
   </body>
   </html>

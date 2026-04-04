@@ -3,84 +3,88 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Test Enigneering Agents</title>
+    <title>AI Test Engineering Agents</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topnav">
         <a class="brand" href="/">
-          <span class="brand-mark">TD</span>
-          <span>AI Test Enigneering</span>
+          <span class="brand-mark">ATE</span>
+          <span>AI Test Engineering</span>
         </a>
         <nav class="navlinks">
           <a href="/">Overview</a>
-          <a class="active" href="/agents">Agents</a>
-          <a href="/playbooks">Playbooks</a>
-          <a href="/reports">Reports</a>
+          <a class="active" href="/agents">How It Works</a>
+          <a href="/playbooks">What To Do</a>
+          <a href="/reports">Results</a>
+          <a href="/profile">Profile</a>
         </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
       </header>
 
       <section class="hero compact-hero">
         <div class="hero-topline">
-          <div class="badge">System Architecture</div>
+          <div class="badge">Simple system view</div>
           <div class="hero-chip">5-part execution model</div>
         </div>
         <div class="hero-copy">
-          <div class="eyebrow">Multi-agent platform</div>
-          <h1>Agent Stack</h1>
+          <div class="eyebrow">How the system works</div>
+          <h1>What each part does</h1>
           <p>
-            TestDebugger splits code understanding, generation, execution, debugging,
-            and orchestration into focused roles so each stage can be observed and improved independently.
+            The product breaks the job into smaller parts so it can understand your code, write tests, run them, and explain the result clearly.
           </p>
         </div>
       </section>
 
-      <section class="card-grid three-up">
-        <article class="panel feature-card">
-          <div class="section-kicker">01</div>
-          <h2>Planner</h2>
-          <p>Maps modules, risk areas, and test strategy before any files are generated.</p>
-          <ul class="plain-list">
-            <li>Repository scanning</li>
-            <li>Function inventory</li>
-            <li>Priority scoring</li>
-          </ul>
-        </article>
-        <article class="panel feature-card">
-          <div class="section-kicker">02</div>
-          <h2>Generator</h2>
-          <p>Produces test files with balanced and safe execution modes for iterative recovery.</p>
-          <ul class="plain-list">
-            <li>Pytest file generation</li>
-            <li>Edge-case coverage</li>
-            <li>Import/bootstrap support</li>
-          </ul>
-        </article>
-        <article class="panel feature-card">
-          <div class="section-kicker">03</div>
-          <h2>Executor</h2>
-          <p>Runs real pytest commands and keeps stdout, stderr, duration, and failure metadata.</p>
-          <ul class="plain-list">
-            <li>Real subprocess execution</li>
-            <li>Failure parsing</li>
-            <li>Artifact persistence</li>
-          </ul>
-        </article>
+      <section class="panel wireframe-panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Page guide</div>
+            <h2>How to read this page</h2>
+          </div>
+          <div class="panel-note">Top: simple explanation. Middle: the main parts. Bottom: latest live result.</div>
+        </div>
+        <div class="wireframe-grid three-lane">
+          <article class="wire-block">
+            <span>Part 1</span>
+            <strong>Simple explanation</strong>
+            <p>This area explains the product in one short paragraph.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 2</span>
+            <strong>Main steps</strong>
+            <p>The cards show the important pieces in the order most people expect.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 3</span>
+            <strong>Latest live update</strong>
+            <p>The last section tells you what happened most recently.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="card-grid three-up" id="agent-cards">
+        <div class="empty">Loading latest agent state...</div>
       </section>
 
       <section class="card-grid two-up">
         <article class="panel feature-card">
-          <div class="section-kicker">04</div>
-          <h2>Debugger</h2>
-          <p>Inspects failing runs and lowers generation aggressiveness when the system made unsafe assumptions.</p>
+          <div class="section-kicker">Latest summary</div>
+          <h2>What the system understood</h2>
+          <div id="planner-live" class="body-copy">Waiting for the latest completed run.</div>
         </article>
         <article class="panel feature-card">
-          <div class="section-kicker">05</div>
-          <h2>Orchestrator</h2>
-          <p>Coordinates the loop from analysis to final report and determines when to stop retrying.</p>
+          <div class="section-kicker">Latest result</div>
+          <h2>What happened after running tests</h2>
+          <div id="execution-live" class="body-copy">Waiting for the latest completed run.</div>
         </article>
       </section>
     </main>
+    <script src="/static/agents.js"></script>
+    <script src="/static/session.js"></script>
   </body>
   </html>

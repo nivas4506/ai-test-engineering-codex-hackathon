@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-workspace-pvc
+  namespace: testdebugger
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: testdebugger-app
+  namespace: testdebugger
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: testdebugger-app
+  template:
+    metadata:
+      labels:
+        app: testdebugger-app
+    spec:
+      containers:
+        - name: app
+          image: ghcr.io/nivas4506/ai-test-engineering:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
+          envFrom:
+            - configMapRef:
+                name: app-config
+            - secretRef:
+                name: app-secret
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 12
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 25
+            periodSeconds: 15
+          volumeMounts:
+            - name: workspace-storage
+              mountPath: /app/workspace
+      volumes:
+        - name: workspace-storage
+          persistentVolumeClaim:
+            claimName: app-workspace-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: testdebugger-app
+  namespace: testdebugger
+spec:
+  selector:
+    app: testdebugger-app
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

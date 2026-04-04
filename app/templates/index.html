@@ -3,36 +3,40 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Test Enigneering</title>
+    <title>AI Test Engineering</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topnav">
         <a class="brand" href="/">
-          <span class="brand-mark">TD</span>
-          <span>AI Test Enigneering</span>
+          <span class="brand-mark">ATE</span>
+          <span>AI Test Engineering</span>
         </a>
         <nav class="navlinks">
           <a class="active" href="/">Overview</a>
-          <a href="/agents">Agents</a>
-          <a href="/playbooks">Playbooks</a>
-          <a href="/reports">Reports</a>
+          <a href="/agents">How It Works</a>
+          <a href="/playbooks">What To Do</a>
+          <a href="/reports">Results</a>
+          <a href="/profile">Profile</a>
         </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
       </header>
 
       <section class="hero">
         <div class="hero-topline">
-          <div class="badge">Figma-inspired Liquid UI</div>
-          <div class="hero-chip">FastAPI + Real Pytest Loop</div>
+          <div class="badge">Liquid UI workspace</div>
+          <div class="hero-chip" id="model-chip">FastAPI + Orchestrator + Pytest</div>
         </div>
         <div class="hero-grid">
           <div class="hero-copy">
-            <div class="eyebrow">Autonomous QA control surface</div>
-            <h1>AI Test Enigneering</h1>
+            <div class="eyebrow">AI-assisted testing</div>
+            <h1>AI Test Engineering</h1>
             <p>
-              Analyze a Python repository, generate tests, run real pytest execution,
-              and inspect the orchestration report in a single liquid-glass control surface.
+              Upload a repository, generate tests, run them automatically, and review the result in one clear workspace.
             </p>
           </div>
           <div class="hero-side">
@@ -51,6 +55,10 @@
                   <div class="metric-label">Tests</div>
                   <strong>0</strong>
                 </div>
+                <div class="metric">
+                  <div class="metric-label">AI Model</div>
+                  <strong>waiting</strong>
+                </div>
               </div>
             </div>
           </div>
@@ -64,26 +72,40 @@
               <div class="section-kicker">Inputs</div>
               <h2>Control Deck</h2>
             </div>
-            <div class="panel-note">Point the runner at any Python repo.</div>
+            <div class="panel-note">Choose a repository and start the test flow.</div>
           </div>
           <form class="stack" id="orchestrate-form">
             <label>
               Repository path
               <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
             </label>
+            <div class="upload-card">
+              <div class="upload-copy">
+                <div class="section-kicker">Upload</div>
+                <p class="body-copy">Upload a repository archive or a single source file. The extracted path will be filled in automatically.</p>
+              </div>
+              <div class="upload-actions">
+                <div class="upload-picker">
+                  <input class="file-input" id="repo_archive" name="repo_archive" type="file" />
+                  <label class="button secondary file-picker" for="repo_archive">Choose and upload file</label>
+                  <span class="file-meta" id="repo-archive-name">No file selected</span>
+                </div>
+                <div class="upload-feedback" id="upload-feedback">The upload starts as soon as you choose a file or archive.</div>
+              </div>
+            </div>
             <label>
               Max retries
               <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />
             </label>
             <div class="actions">
-              <button class="button" id="run-button" type="submit">Run orchestration</button>
+              <button class="button" id="run-button" type="submit">Run test flow</button>
               <button class="button secondary" id="sample-button" type="button">Use sample repo</button>
               <button class="button secondary" id="report-button" type="button">Reload report</button>
             </div>
           </form>
           <div class="control-footer">
-            <div class="status-pill" id="run-status">Ready</div>
-            <div class="control-hint">Orchestration persists artifacts inside the local workspace.</div>
+            <div class="status-pill idle" id="run-status">Idle</div>
+            <div class="control-hint" id="model-hint">AI model status loads after sign-in.</div>
           </div>
         </div>
 
@@ -93,10 +115,14 @@
               <div class="section-kicker">Execution</div>
               <h2>Iteration Timeline</h2>
             </div>
-            <div class="panel-note">Each retry shows execution result and debugger diagnosis.</div>
+            <div class="panel-note">Each attempt shows the test result and the next decision.</div>
           </div>
           <div class="timeline" id="timeline">
             <div class="empty">Run the orchestrator to see live report data.</div>
+          </div>
+          <div class="loading-indicator" id="loading-indicator" aria-hidden="true">
+            <span class="spinner"></span>
+            <span>Running orchestration...</span>
           </div>
         </div>
       </section>
@@ -115,7 +141,7 @@
         <div class="panel" id="logs">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Pytest Output</div>
+              <div class="section-kicker">Test Output</div>
               <h2>Execution Logs</h2>
             </div>
             <div class="panel-note">Real stdout and stderr from the last run.</div>
@@ -134,8 +160,22 @@
         </div>
         <div class="empty">The full JSON report will render here.</div>
       </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Recent Runs</div>
+            <h2>Saved runs</h2>
+          </div>
+          <div class="panel-note">Click any recent run to load it back into this page.</div>
+        </div>
+        <div class="run-list" id="recent-runs">
+          <div class="empty">No completed runs yet.</div>
+        </div>
+      </section>
     </main>
 
     <script src="/static/app.js"></script>
+    <script src="/static/session.js"></script>
   </body>
-  </html>
+</html>

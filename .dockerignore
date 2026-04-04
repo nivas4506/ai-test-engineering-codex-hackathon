@@ -1,0 +1,16 @@
+.git
+.gitignore
+.dist
+.pytest_cache
+__pycache__
+*.py[cod]
+*.log
+*.sqlite
+.venv
+venv
+env
+workspace
+tests
+image.png
+.env
+.env.*

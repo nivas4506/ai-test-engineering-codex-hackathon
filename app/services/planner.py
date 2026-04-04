@@ -20,6 +20,8 @@ class PlannerService:
                 strategy.append("callable existence test")
             if any(fn.arg_count == 0 for fn in module.functions):
                 strategy.append("zero-argument execution smoke test")
+            if module.language in {"javascript", "typescript"}:
+                strategy.append("node-compatible module load test")
 
             planned_modules.append(
                 PlannedModule(
@@ -27,9 +29,10 @@ class PlannerService:
                     file_path=module.file_path,
                     priority=priority,
                     strategy=strategy,
-                    rationale=f"Module exposes {function_count} public top-level functions.",
+                    rationale=f"{module.language.title()} module exposes {function_count} public top-level functions.",
                 )
             )
 
-        summary = f"Planned {len(planned_modules)} Python modules for generated pytest coverage."
+        language_summary = ", ".join(language.title() for language in analysis.detected_languages) or "Unknown"
+        summary = f"Planned {len(planned_modules)} modules for generated test coverage across {language_summary} sources."
         return PlanResult(modules=planned_modules, summary=summary)

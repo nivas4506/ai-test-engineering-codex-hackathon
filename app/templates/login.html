@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login | AI Test Engineering</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell auth-shell">
+      <section class="hero compact-hero auth-hero">
+        <div class="hero-topline">
+          <div class="badge">Secure access</div>
+          <div class="hero-chip">OAuth2 login</div>
+        </div>
+        <div class="hero-copy">
+          <div class="eyebrow">Welcome back</div>
+          <h1>Sign in</h1>
+          <p>Use your account to open the product, save your runs, and keep your testing workspace private.</p>
+        </div>
+      </section>
+
+      <section class="panel auth-card">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Login</div>
+            <h2>Enter your account details</h2>
+          </div>
+          <div class="panel-note">New here? Create an account first.</div>
+        </div>
+        <form class="stack" id="login-form">
+          <label>
+            Email
+            <input id="login-email" type="email" required />
+          </label>
+          <label>
+            Password
+            <input id="login-password" type="password" required />
+          </label>
+          <div class="actions">
+            <button class="button" type="submit">Sign in</button>
+            <a class="button secondary link-button" href="/signup">Create account</a>
+          </div>
+        </form>
+        <div class="auth-message" id="auth-message">Use the same account each time to keep your saved runs together.</div>
+      </section>
+    </main>
+    <script src="/static/auth.js"></script>
+  </body>
+  </html>

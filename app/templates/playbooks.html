@@ -3,73 +3,117 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Test Enigneering Playbooks</title>
+    <title>AI Test Engineering Playbooks</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
     <main class="shell">
       <header class="topnav">
         <a class="brand" href="/">
-          <span class="brand-mark">TD</span>
-          <span>AI Test Enigneering</span>
+          <span class="brand-mark">ATE</span>
+          <span>AI Test Engineering</span>
         </a>
         <nav class="navlinks">
           <a href="/">Overview</a>
-          <a href="/agents">Agents</a>
-          <a class="active" href="/playbooks">Playbooks</a>
-          <a href="/reports">Reports</a>
+          <a href="/agents">How It Works</a>
+          <a class="active" href="/playbooks">What To Do</a>
+          <a href="/reports">Results</a>
+          <a href="/profile">Profile</a>
         </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
       </header>
 
       <section class="hero compact-hero">
         <div class="hero-topline">
-          <div class="badge">Operator Workflows</div>
+          <div class="badge">Easy next steps</div>
           <div class="hero-chip">Repeatable execution patterns</div>
         </div>
         <div class="hero-copy">
-          <div class="eyebrow">Playbooks</div>
-          <h1>How teams run TestDebugger</h1>
+          <div class="eyebrow">Simple guidance</div>
+          <h1>What you should do next</h1>
           <p>
-            Use focused playbooks to move from a cold repository to a usable execution report
-            without losing traceability across retries.
+            If you are not sure what to do after opening the app, this page gives you the easiest next move.
           </p>
         </div>
+      </section>
+
+      <section class="panel wireframe-panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Page guide</div>
+            <h2>How to read this page</h2>
+          </div>
+          <div class="panel-note">First read the recommendation, then choose one simple path below.</div>
+        </div>
+        <div class="wireframe-grid three-lane">
+          <article class="wire-block">
+            <span>Step 1</span>
+            <strong>Understand the page</strong>
+            <p>The hero explains that this page is here to guide you.</p>
+          </article>
+          <article class="wire-block">
+            <span>Step 2</span>
+            <strong>Read the recommendation</strong>
+            <p>The app suggests the best next move based on your latest run.</p>
+          </article>
+          <article class="wire-block">
+            <span>Step 3</span>
+            <strong>Pick one path</strong>
+            <p>The three cards below give simple choices instead of too many options.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Recommended next move</div>
+            <h2>Best option for you now</h2>
+          </div>
+          <div class="panel-note">This updates from your most recent run.</div>
+        </div>
+        <div id="playbook-recommendation" class="body-copy">Loading run history...</div>
       </section>
 
       <section class="stack">
         <article class="panel step-card">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Playbook A</div>
-              <h2>First-pass repository scan</h2>
+              <div class="section-kicker">Option A</div>
+              <h2>Start with a quick scan</h2>
             </div>
-            <div class="panel-note">Best for new repos with no tests.</div>
+            <div class="panel-note">Good for a new project with little or no testing.</div>
           </div>
-          <p>Run analysis, inspect the planner output, generate tests once, then review whether the module inventory looks sane before scaling up.</p>
+          <p>Let the app scan the project first, create one test pass, and then check whether the results look reasonable.</p>
         </article>
 
         <article class="panel step-card">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Playbook B</div>
-              <h2>Failure isolation loop</h2>
+              <div class="section-kicker">Option B</div>
+              <h2>Focus on fixing failures</h2>
             </div>
-            <div class="panel-note">Best for brittle or side-effect-heavy code.</div>
+            <div class="panel-note">Good when the first run fails or the project is unstable.</div>
           </div>
-          <p>Use balanced mode first. If generation overreaches, let the debugger shift into safe mode and compare the logs side by side in the report view.</p>
+          <p>Run once, read the errors, and let the app move into a safer retry mode if the first attempt was too aggressive.</p>
         </article>
 
         <article class="panel step-card">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Playbook C</div>
-              <h2>Demo-ready artifact export</h2>
+              <div class="section-kicker">Option C</div>
+              <h2>Show the result to others</h2>
             </div>
-            <div class="panel-note">Best for hackathons and reviews.</div>
+            <div class="panel-note">Good when you want to present the result clearly.</div>
           </div>
-          <p>Run orchestration against a sample repo, then open the report page to present iterations, generated files, and final status as a clean narrative.</p>
+          <p>Use a working project, complete a run, and then open the Results page to show the summary, logs, and final status.</p>
         </article>
       </section>
     </main>
+    <script src="/static/playbooks.js"></script>
+    <script src="/static/session.js"></script>
   </body>
   </html>

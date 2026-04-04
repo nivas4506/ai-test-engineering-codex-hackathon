@@ -6,8 +6,13 @@ __pycache__/
 .venv/
 venv/
 env/
+.env
+.env.*
 
 workspace/runs/
+workspace/uploads/
+
+k8s/*secret.yaml
 
 .DS_Store
 Thumbs.db

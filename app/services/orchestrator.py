@@ -10,6 +10,7 @@ from app.models.schemas import (
     PlanResult,
     RunReport,
 )
+from app.db.repository import RunRepository
 from app.services.debugger import DebuggerService
 from app.services.executor import PytestExecutor
 from app.services.planner import PlannerService
@@ -25,6 +26,7 @@ class OrchestratorService:
         self.generator = TestGeneratorService()
         self.executor = PytestExecutor()
         self.debugger = DebuggerService()
+        self.run_repository = RunRepository()
 
     def analyze(self, repository_path: str) -> AnalysisResult:
         return self.analyzer.analyze(repository_path)
@@ -32,7 +34,7 @@ class OrchestratorService:
     def plan(self, analysis: AnalysisResult) -> PlanResult:
         return self.planner.create_plan(analysis)
 
-    def orchestrate(self, repository_path: str, max_retries: int) -> RunReport:
+    def orchestrate(self, repository_path: str, max_retries: int, user_id: int | None = None) -> RunReport:
         run_id, run_dir = create_run_directory()
         repo_path = Path(repository_path).resolve()
         snapshot_repository_metadata(repo_path, run_dir)
@@ -95,4 +97,5 @@ class OrchestratorService:
         )
         report_path = write_json(run_dir / "artifacts" / "final_report.json", report.model_dump())
         report.artifact_paths["final_report"] = str(report_path)
+        self.run_repository.upsert_run_report(report, max_retries=max_retries, user_id=user_id)
         return report

@@ -25,22 +25,53 @@ class OrchestrateRequest(BaseModel):
     max_retries: int = Field(default=2, ge=0, le=5)
 
 
+class SignUpRequest(BaseModel):
+    email: str
+    full_name: str
+    password: str = Field(min_length=8)
+
+
+class AuthenticatedUser(BaseModel):
+    id: int
+    email: str
+    full_name: str
+
+
+class AuthResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AuthenticatedUser
+
+
+class FunctionCase(BaseModel):
+    description: str
+    arguments: list[str] = Field(default_factory=list)
+    expected_expression: str
+
+
 class ModuleFunction(BaseModel):
     name: str
     line_number: int
     arg_count: int
+    required_arg_count: int
+    parameter_names: list[str] = Field(default_factory=list)
     has_defaults: bool
+    inferred_cases: list[FunctionCase] = Field(default_factory=list)
 
 
 class ModuleSummary(BaseModel):
     file_path: str
     module_import: str
+    language: Literal["python", "javascript", "typescript"]
     functions: list[ModuleFunction] = Field(default_factory=list)
 
 
 class AnalysisResult(BaseModel):
     repository_path: str
     python_files: list[str]
+    javascript_files: list[str] = Field(default_factory=list)
+    typescript_files: list[str] = Field(default_factory=list)
+    detected_languages: list[Literal["python", "javascript", "typescript"]] = Field(default_factory=list)
     modules: list[ModuleSummary]
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
@@ -66,7 +97,33 @@ class GeneratedFile(BaseModel):
 class GenerationResult(BaseModel):
     generated_files: list[GeneratedFile]
     mode: Literal["balanced", "safe"]
+    provider: Literal["openai", "heuristic"]
+    model: str | None = None
     summary: str
+
+
+class SystemStatusResponse(BaseModel):
+    ai_provider: Literal["openai", "heuristic"]
+    ai_model: str | None = None
+    openai_configured: bool
+    reasoning_effort: str | None = None
+
+
+class UserProfileStats(BaseModel):
+    total_runs: int
+    passed_runs: int
+    runs_needing_attention: int
+    latest_run_id: str | None = None
+    latest_run_status: Literal["passed", "failed", "error"] | None = None
+
+
+class UserProfileSummaryResponse(BaseModel):
+    id: int
+    email: str
+    full_name: str
+    member_since: datetime | None = None
+    last_login_at: datetime | None = None
+    stats: UserProfileStats
 
 
 class FailingTest(BaseModel):
@@ -107,3 +164,23 @@ class RunReport(BaseModel):
     execution_history: list[ExecutionResult]
     debug_history: list[DebugResult]
     artifact_paths: dict[str, Any]
+
+
+class RunListItem(BaseModel):
+    run_id: str
+    repository_path: str
+    status: Literal["passed", "failed", "error"]
+    iterations: int
+    created_at: datetime
+    latest_test_count: int | None = None
+
+
+class UploadResponse(BaseModel):
+    upload_id: str
+    repository_path: str
+    original_filename: str
+
+
+class UpdateRunRequest(BaseModel):
+    status: Literal["passed", "failed", "error"] | None = None
+    notes: str | None = None

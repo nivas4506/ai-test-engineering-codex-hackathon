@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Engineering Profile</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">ATE</span>
+          <span>AI Test Engineering</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/">Overview</a>
+          <a href="/agents">How It Works</a>
+          <a href="/playbooks">What To Do</a>
+          <a href="/reports">Results</a>
+          <a class="active" href="/profile">Profile</a>
+        </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
+      </header>
+
+      <section class="hero compact-hero">
+        <div class="hero-topline">
+          <div class="badge">Account view</div>
+          <div class="hero-chip">Identity + activity summary</div>
+        </div>
+        <div class="hero-copy">
+          <div class="eyebrow">Your profile</div>
+          <h1>See your account and run history</h1>
+          <p>
+            This page shows your account details, your latest activity, and a quick summary of how your testing runs are going.
+          </p>
+        </div>
+      </section>
+
+      <section class="panel wireframe-panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Page guide</div>
+            <h2>How to read this page</h2>
+          </div>
+          <div class="panel-note">Top: account basics. Middle: run counts. Bottom: helpful details.</div>
+        </div>
+        <div class="wireframe-grid three-lane">
+          <article class="wire-block">
+            <span>Part 1</span>
+            <strong>Account identity</strong>
+            <p>Your name, email, and account dates are shown first.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 2</span>
+            <strong>Run activity</strong>
+            <p>These cards show how many runs worked and how many still need attention.</p>
+          </article>
+          <article class="wire-block">
+            <span>Part 3</span>
+            <strong>Quick details</strong>
+            <p>The final section summarizes your latest run and account status in plain language.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="dashboard-shell">
+        <article class="panel selected-report-panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Account details</div>
+              <h2>Profile summary</h2>
+            </div>
+            <div class="panel-note">Pulled from your login and saved account record.</div>
+          </div>
+          <div id="profile-identity" class="body-copy">Loading account details...</div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Run activity</div>
+              <h2>Your testing stats</h2>
+            </div>
+            <div class="panel-note">A fast view of how your recent work is going.</div>
+          </div>
+          <div class="card-grid two-up profile-summary-grid" id="profile-stats">
+            <div class="empty">Loading run stats...</div>
+          </div>
+        </article>
+      </section>
+
+      <section class="card-grid two-up">
+        <article class="panel feature-card">
+          <div class="section-kicker">Latest run</div>
+          <h2>Most recent activity</h2>
+          <div id="profile-latest-run" class="body-copy">Loading latest activity...</div>
+        </article>
+        <article class="panel feature-card">
+          <div class="section-kicker">Account status</div>
+          <h2>What this means</h2>
+          <div id="profile-guidance" class="body-copy">Loading profile guidance...</div>
+        </article>
+      </section>
+    </main>
+    <script src="/static/profile.js"></script>
+    <script src="/static/session.js"></script>
+  </body>
+</html>
