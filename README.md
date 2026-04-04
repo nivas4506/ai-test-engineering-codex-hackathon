@@ -1,53 +1,84 @@
-# AI Test Engineer MVP
+# 🚀 AI Test Engineering Platform
 
-Minimal FastAPI prototype for automated repository analysis, pytest generation, execution, retry orchestration, and a liquid-style frontend for AI Test Engineering.
+The **AI Test Engineering** platform is an advanced, automated agentic system designed for repository analysis, pytest generation, execution, and retry orchestration. It features a modern liquid-style dashboard built with FastAPI.
 
-Current language support:
+---
 
-- Python: analyze, generate tests, execute with `pytest`
-- JavaScript: analyze, generate tests, execute with Node's built-in test runner
-- TypeScript: analyze and generate tests; execution requires a project dependency such as `tsx`, `vitest`, or `jest`
+## 📋 Core Process: Step-by-Step
 
-## Run
+Follow these steps to get the platform up and running and start generating AI-driven tests.
+
+### 1️⃣ Environment Setup
+Ensure you have Python installed, then set up the virtual environment:
 
 ```powershell
+# Create and activate virtual environment
 python -m venv .venv
 .venv\Scripts\Activate.ps1
+
+# Install required dependencies
 pip install -r requirements.txt
+```
+
+### 2️⃣ Configuration
+The platform uses OpenAI for intelligent test generation. Set your credentials in your environment or a `.env` file:
+
+```powershell
+# Required: Your OpenAI API key
+$env:OPENAI_API_KEY="your_api_key_here"
+
+# Optional: Preferred model (defaults to gpt-5-mini if omitted)
+$env:OPENAI_MODEL="gpt-5-mini"
+
+# Optional: Reasoning effort (if using reasoning models)
+$env:OPENAI_REASONING_EFFORT="low"
+```
+> [!TIP]
+> If no API key is present, the platform automatically falls back to a rule-based heuristic test generator.
+
+### 3️⃣ Launching the Application
+Start the FastAPI development server:
+
+```powershell
 uvicorn app.main:app --reload
 ```
 
-Then open:
+### 4️⃣ Repository Analysis & Test Generation
+Once the server is running, navigate to the web interface or use the API to trigger orchestration.
 
-- `http://127.0.0.1:8000/`
-- `http://127.0.0.1:8000/agents`
-- `http://127.0.0.1:8000/playbooks`
-- `http://127.0.0.1:8000/reports`
+**Dashboard Access:**
+- 🏠 **Main Dashboard:** `http://127.0.0.1:8000/`
+- 🤖 **Agent View:** `http://127.0.0.1:8000/agents`
+- 📖 **Playbooks:** `http://127.0.0.1:8000/playbooks`
+- 📊 **Reports:** `http://127.0.0.1:8000/reports`
 
-## OpenAI Integration
-
-The product now supports OpenAI-backed test generation through the Responses API.
-
-Copy [.env.example](C:\Users\A\OneDrive\Documents\Codex%20hackathon\.env.example) to `.env` or set these environment variables before starting the app:
-
-```powershell
-$env:OPENAI_API_KEY="your_api_key"
-$env:OPENAI_MODEL="gpt-5-mini"
-$env:OPENAI_REASONING_EFFORT="low"
-```
-
-`OPENAI_MODEL` is optional. If omitted, the app defaults to `gpt-5-mini`.
-If no API key is present, the generator falls back to the built-in heuristic path.
-When configured, the dashboard shows the active provider and model so you can confirm the app is actually using OpenAI generation.
-
-## Example
-
+**Triggering via API (Example):**
 ```powershell
 curl -X POST http://127.0.0.1:8000/orchestrate `
   -H "Content-Type: application/json" `
-  -d "{\"repository_path\":\"C:\\Users\\A\\OneDrive\\Documents\\Codex hackathon\\samples\\demo_repo\",\"max_retries\":2}"
+  -d "{\"repository_path\":\"C:\\path\\to\\your\\repo\",\"max_retries\":2}"
 ```
 
-## Demo Video
-https://github.com/user-attachments/assets/9b67132b-9399-41cf-b637-cf238055cc40
+### 5️⃣ Execution & Execution Monitoring
+The orchestrator will:
+1.  **Analyze** the target repository structure.
+2.  **Generate** `pytest` cases using OpenAI (or heuristics).
+3.  **Execute** the tests.
+4.  **Retry** failing tests with AI-assisted fixes (up to `max_retries`).
+5.  **Finalize** results and generate a visual report in the `/reports` section.
+
+---
+
+## 🛠️ Language Support
+The platform currently supports:
+- ✅ **Python:** Analysis, test generation, and `pytest` execution.
+- ✅ **JavaScript:** Analysis, test generation, and Node.js built-in test runner execution.
+- 🚧 **TypeScript:** Analysis and test generation (Execution requires local `tsx`, `vitest`, or `jest` dependencies).
+
+## 📽️ Demo Video
+[Watch the platform in action](https://github.com/user-attachments/assets/9b67132b-9399-41cf-b637-cf238055cc40)
+
+---
+*Created with ❤️ by the AI Test Engineering Team*
+
 
