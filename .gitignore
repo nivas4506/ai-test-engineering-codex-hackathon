@@ -8,9 +8,11 @@ venv/
 env/
 .env
 .env.*
+.vercel/
 
 workspace/runs/
 workspace/uploads/
+workspace/*.db
 
 k8s/*secret.yaml
 

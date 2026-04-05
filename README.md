@@ -1,84 +1,89 @@
-# 🚀 AI Test Engineering Platform
+# AI Test Engineering
 
-The **AI Test Engineering** platform is an advanced, automated agentic system designed for repository analysis, pytest generation, execution, and retry orchestration. It features a modern liquid-style dashboard built with FastAPI.
+AI Test Engineering is a FastAPI product that analyzes repositories, generates tests, runs them, retries on failures, and presents the results in a user-facing dashboard.
 
----
-
-## 📋 Core Process: Step-by-Step
-
-Follow these steps to get the platform up and running and start generating AI-driven tests.
-
-### 1️⃣ Environment Setup
-Ensure you have Python installed, then set up the virtual environment:
+## Local Run
 
 ```powershell
-# Create and activate virtual environment
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-
-# Install required dependencies
 pip install -r requirements.txt
-```
-
-### 2️⃣ Configuration
-The platform uses OpenAI for intelligent test generation. Set your credentials in your environment or a `.env` file:
-
-```powershell
-# Required: Your OpenAI API key
-$env:OPENAI_API_KEY="your_api_key_here"
-
-# Optional: Preferred model (defaults to gpt-5-mini if omitted)
-$env:OPENAI_MODEL="gpt-5-mini"
-
-# Optional: Reasoning effort (if using reasoning models)
-$env:OPENAI_REASONING_EFFORT="low"
-```
-> [!TIP]
-> If no API key is present, the platform automatically falls back to a rule-based heuristic test generator.
-
-### 3️⃣ Launching the Application
-Start the FastAPI development server:
-
-```powershell
 uvicorn app.main:app --reload
 ```
 
-### 4️⃣ Repository Analysis & Test Generation
-Once the server is running, navigate to the web interface or use the API to trigger orchestration.
+The project targets Python `3.13`.
 
-**Dashboard Access:**
-- 🏠 **Main Dashboard:** `http://127.0.0.1:8000/`
-- 🤖 **Agent View:** `http://127.0.0.1:8000/agents`
-- 📖 **Playbooks:** `http://127.0.0.1:8000/playbooks`
-- 📊 **Reports:** `http://127.0.0.1:8000/reports`
+Open:
 
-**Triggering via API (Example):**
+- `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/agents`
+- `http://127.0.0.1:8000/playbooks`
+- `http://127.0.0.1:8000/reports`
+- `http://127.0.0.1:8000/profile`
+
+## Environment
+
+Set these locally or in `.env`:
+
 ```powershell
-curl -X POST http://127.0.0.1:8000/orchestrate `
-  -H "Content-Type: application/json" `
-  -d "{\"repository_path\":\"C:\\path\\to\\your\\repo\",\"max_retries\":2}"
+$env:OPENAI_API_KEY="your_api_key_here"
+$env:OPENAI_MODEL="gpt-5-mini"
+$env:OPENAI_REASONING_EFFORT="low"
 ```
 
-### 5️⃣ Execution & Execution Monitoring
-The orchestrator will:
-1.  **Analyze** the target repository structure.
-2.  **Generate** `pytest` cases using OpenAI (or heuristics).
-3.  **Execute** the tests.
-4.  **Retry** failing tests with AI-assisted fixes (up to `max_retries`).
-5.  **Finalize** results and generate a visual report in the `/reports` section.
+Optional local database:
 
----
+```powershell
+$env:DATABASE_URL="sqlite:///./workspace/app.db"
+```
 
-## 🛠️ Language Support
-The platform currently supports:
-- ✅ **Python:** Analysis, test generation, and `pytest` execution.
-- ✅ **JavaScript:** Analysis, test generation, and Node.js built-in test runner execution.
-- 🚧 **TypeScript:** Analysis and test generation (Execution requires local `tsx`, `vitest`, or `jest` dependencies).
+## OAuth2 and Sessions
 
-## 📽️ Demo Video
-[Watch the platform in action](https://github.com/user-attachments/assets/9b67132b-9399-41cf-b637-cf238055cc40)
+The API uses an OAuth2 password-bearer login endpoint at `/auth/token` and stores authenticated browser sessions in the database. For deployed environments, cookies should be secure and the database must be external.
 
----
-*Created with ❤️ by the AI Test Engineering Team*
+## Vercel Deployment
 
+The repo includes:
 
+- `vercel.json` to disable duplicate Git-triggered deploys when GitHub Actions handles CI/CD
+- `app/index.py` as the Vercel Python entrypoint
+- GitHub Actions for CI, preview deploys, and production deploys
+
+Recommended Vercel environment variables:
+
+- `OPENAI_API_KEY`
+- `OPENAI_MODEL`
+- `OPENAI_REASONING_EFFORT`
+- `DATABASE_URL`
+- `AUTH_COOKIE_SECURE=true`
+
+Important:
+
+- Use PostgreSQL or MySQL on Vercel. Do not rely on SQLite for real deployed user data.
+- The app writes temporary uploads and generated test artifacts under `/tmp/ai-test-engineering` on Vercel.
+
+## GitHub Actions Secrets
+
+Set these repository secrets before enabling the workflows:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Optional app secrets:
+
+- `OPENAI_API_KEY`
+- `DATABASE_URL`
+
+## CI/CD Flow
+
+- `.github/workflows/ci.yml`: runs `pytest`
+- `.github/workflows/vercel-preview.yml`: tests, builds, and deploys preview environments for PRs
+- `.github/workflows/vercel-production.yml`: tests, builds, and deploys production on `main`
+- `.github/workflows/k8s-deploy.yml`: left as manual-only so it no longer conflicts with Vercel
+
+## Language Support
+
+- Python: analysis, test generation, and `pytest` execution
+- JavaScript: analysis, test generation, and `node --test` execution
+- TypeScript: analysis and generation, with execution depending on project tooling

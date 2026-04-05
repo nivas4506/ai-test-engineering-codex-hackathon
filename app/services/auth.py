@@ -59,5 +59,9 @@ def get_current_user_optional(request: Request, token: str | None = Depends(oaut
 def get_current_user(request: Request, token: str | None = Depends(oauth2_scheme)) -> AuthenticatedUser:
     user = resolve_current_user(request, token)
     if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Authentication required",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
     return user

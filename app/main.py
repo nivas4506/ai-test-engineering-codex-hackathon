@@ -1,3 +1,4 @@
+from contextlib import asynccontextmanager
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -9,15 +10,16 @@ from app.db import init_database
 from app.services.auth import resolve_current_user
 
 
-app = FastAPI(title="AI Test Engineering", version="0.1.0")
+@asynccontextmanager
+async def lifespan(_: FastAPI):
+    init_database()
+    yield
+
+
+app = FastAPI(title="AI Test Engineering", version="0.1.0", lifespan=lifespan)
 app.include_router(router)
 BASE_DIR = Path(__file__).resolve().parent
 app.mount("/static", StaticFiles(directory=BASE_DIR / "static"), name="static")
-
-
-@app.on_event("startup")
-def startup() -> None:
-    init_database()
 
 
 def render_template(template_name: str) -> str:

@@ -1,8 +1,7 @@
-const samplePath = String.raw`C:\Users\A\OneDrive\Documents\Codex hackathon\samples\demo_repo`;
-
 const state = {
   runId: null,
   latestReport: null,
+  samplePath: "",
 };
 
 const systemState = {
@@ -102,6 +101,22 @@ function getSelectedUploadLabel(files) {
   }
 
   return `${files.length} files selected`;
+}
+
+async function ensureSamplePath() {
+  if (state.samplePath) {
+    return state.samplePath;
+  }
+
+  const response = await fetch("/sample-repository");
+  const raw = await response.text();
+  const data = raw ? JSON.parse(raw) : {};
+  if (!response.ok || !data.repository_path) {
+    throw new Error((typeof data?.detail === "string" && data.detail) || "Sample repository is unavailable.");
+  }
+
+  state.samplePath = data.repository_path;
+  return state.samplePath;
 }
 
 function getModelDisplay(provider, model) {
@@ -458,8 +473,14 @@ async function loadSystemStatus() {
 
 els.form.addEventListener("submit", runOrchestration);
 els.repoArchive.addEventListener("change", handleArchiveSelection);
-els.sampleButton.addEventListener("click", () => {
-  els.repositoryPath.value = samplePath;
+els.sampleButton.addEventListener("click", async () => {
+  try {
+    els.repositoryPath.value = await ensureSamplePath();
+    setStatus("Sample repository ready");
+  } catch (error) {
+    setStatus("ERROR", "error");
+    setUploadFeedback(error.message || "Sample repository is unavailable.", "error");
+  }
 });
 els.reportButton.addEventListener("click", async () => {
   try {
@@ -470,6 +491,14 @@ els.reportButton.addEventListener("click", async () => {
 });
 
 setStatus("Idle", "idle");
-els.repositoryPath.value = samplePath;
+ensureSamplePath()
+  .then((repositoryPath) => {
+    els.repositoryPath.value = repositoryPath;
+  })
+  .catch(() => {
+    if (els.modelHint) {
+      els.modelHint.textContent = "Sample repository is unavailable in this environment. Upload a project or enter a path manually.";
+    }
+  });
 loadSystemStatus();
 loadRecentRuns();

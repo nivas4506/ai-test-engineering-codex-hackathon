@@ -1,10 +1,20 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
+from fastapi.security import OAuth2PasswordRequestForm
 
-from app.core.config import ACCESS_TOKEN_EXPIRE_HOURS, AUTH_COOKIE_NAME, OPENAI_REASONING_EFFORT
+from app.core.config import (
+    ACCESS_TOKEN_EXPIRE_HOURS,
+    AUTH_COOKIE_DOMAIN,
+    AUTH_COOKIE_NAME,
+    AUTH_COOKIE_SAMESITE,
+    AUTH_COOKIE_SECURE,
+    OPENAI_REASONING_EFFORT,
+    SAMPLE_REPOSITORY_PATH,
+)
 from app.db.auth_repository import AuthRepository
 from app.db.repository import RunRepository
 from app.models.schemas import (
@@ -44,7 +54,10 @@ def _set_auth_cookie(response: Response, access_token: str) -> None:
         key=AUTH_COOKIE_NAME,
         value=access_token,
         httponly=True,
-        samesite="lax",
+        secure=AUTH_COOKIE_SECURE,
+        samesite=AUTH_COOKIE_SAMESITE,
+        domain=AUTH_COOKIE_DOMAIN,
+        path="/",
         max_age=ACCESS_TOKEN_EXPIRE_HOURS * 3600,
     )
 
@@ -76,12 +89,15 @@ def sign_up(request: SignUpRequest, response: Response):
 @router.post("/auth/token", response_model=AuthResponse)
 def login_for_access_token(
     response: Response,
-    username: str = Form(...),
-    password: str = Form(...),
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
 ):
-    user = auth_repository.get_user_by_email(username)
-    if user is None or not verify_password(password, user.password_hash, user.password_salt):
-        raise HTTPException(status_code=401, detail="Invalid email or password.")
+    user = auth_repository.get_user_by_email(form_data.username)
+    if user is None or not verify_password(form_data.password, user.password_hash, user.password_salt):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     access_token, expires_at = create_access_token()
     auth_repository.create_session(user_id=user.id, access_token=access_token, expires_at=expires_at)
@@ -97,7 +113,13 @@ def logout(request: Request, response: Response, current_user=Depends(get_curren
     access_token = request.cookies.get(AUTH_COOKIE_NAME)
     if access_token:
         auth_repository.revoke_session(access_token)
-    response.delete_cookie(AUTH_COOKIE_NAME)
+    response.delete_cookie(
+        AUTH_COOKIE_NAME,
+        path="/",
+        domain=AUTH_COOKIE_DOMAIN,
+        secure=AUTH_COOKIE_SECURE,
+        samesite=AUTH_COOKIE_SAMESITE,
+    )
     return {"ok": True}
 
 
@@ -115,6 +137,13 @@ def get_system_status(current_user=Depends(get_current_user)):
         openai_configured=openai_writer.enabled,
         reasoning_effort=OPENAI_REASONING_EFFORT if provider == "openai" else None,
     )
+
+
+@router.get("/sample-repository")
+def get_sample_repository(current_user=Depends(get_current_user)):
+    if not SAMPLE_REPOSITORY_PATH.exists():
+        raise HTTPException(status_code=404, detail="Sample repository is not available in this deployment.")
+    return {"repository_path": str(SAMPLE_REPOSITORY_PATH)}
 
 
 @router.get("/profile/summary", response_model=UserProfileSummaryResponse)

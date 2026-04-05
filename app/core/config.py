@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[2]
-WORKSPACE_ROOT = BASE_DIR / "workspace"
+IS_VERCEL = os.getenv("VERCEL") == "1"
+DEFAULT_WORKSPACE_ROOT = Path("/tmp/ai-test-engineering") if IS_VERCEL else BASE_DIR / "workspace"
+WORKSPACE_ROOT = Path(os.getenv("WORKSPACE_ROOT", str(DEFAULT_WORKSPACE_ROOT)))
 WORKSPACE_DIR = WORKSPACE_ROOT / "runs"
 UPLOADS_DIR = WORKSPACE_ROOT / "uploads"
 WORKSPACE_ROOT.mkdir(parents=True, exist_ok=True)
@@ -17,13 +19,17 @@ DEFAULT_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
 OPENAI_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "low")
 ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME", "ai_test_engineering_token")
+AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true" if IS_VERCEL else "false").strip().lower() in {"1", "true", "yes", "on"}
+AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax")
+AUTH_COOKIE_DOMAIN = os.getenv("AUTH_COOKIE_DOMAIN") or None
+SAMPLE_REPOSITORY_PATH = BASE_DIR / "samples" / "demo_repo"
 
 
 def _as_bool(raw: str, default: bool = False) -> bool:
-	value = raw.strip().lower()
-	if not value:
-		return default
-	return value in {"1", "true", "yes", "on"}
+    value = raw.strip().lower()
+    if not value:
+        return default
+    return value in {"1", "true", "yes", "on"}
 
 
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{(WORKSPACE_ROOT / 'app.db').as_posix()}")
