@@ -31,6 +31,10 @@ class SignUpRequest(BaseModel):
     password: str = Field(min_length=8)
 
 
+class GoogleAuthRequest(BaseModel):
+    credential: str = Field(min_length=1)
+
+
 class AuthenticatedUser(BaseModel):
     id: int
     email: str
@@ -107,6 +111,11 @@ class SystemStatusResponse(BaseModel):
     ai_model: str | None = None
     openai_configured: bool
     reasoning_effort: str | None = None
+
+
+class GoogleAuthConfigResponse(BaseModel):
+    enabled: bool
+    client_id: str | None = None
 
 
 class UserProfileStats(BaseModel):

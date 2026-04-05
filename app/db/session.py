@@ -40,16 +40,22 @@ def get_db_session() -> Session:
 
 def _run_lightweight_migrations() -> None:
     inspector = inspect(engine)
-    if "run_records" not in inspector.get_table_names():
+    table_names = set(inspector.get_table_names())
+    if "run_records" not in table_names:
         return
 
     columns = {column["name"] for column in inspector.get_columns("run_records")}
-    if "owner_user_id" in columns:
-        return
-
-    ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER"
-    if not DATABASE_URL.startswith("sqlite"):
-        ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER NULL"
-
     with engine.begin() as connection:
-        connection.execute(text(ddl))
+        if "owner_user_id" not in columns:
+            ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER"
+            if not DATABASE_URL.startswith("sqlite"):
+                ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER NULL"
+            connection.execute(text(ddl))
+
+        if "user_accounts" in table_names:
+            user_columns = {column["name"] for column in inspector.get_columns("user_accounts")}
+            if "auth_provider" not in user_columns:
+                connection.execute(text("ALTER TABLE user_accounts ADD COLUMN auth_provider VARCHAR(32) DEFAULT 'password'"))
+                connection.execute(text("UPDATE user_accounts SET auth_provider = 'password' WHERE auth_provider IS NULL"))
+            if "google_sub" not in user_columns:
+                connection.execute(text("ALTER TABLE user_accounts ADD COLUMN google_sub VARCHAR(255)"))

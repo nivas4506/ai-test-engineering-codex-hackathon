@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import secrets
 from datetime import datetime, timezone
 
 from sqlalchemy import delete, select
@@ -26,9 +27,43 @@ class AuthRepository:
         with get_db_session() as session:
             return session.scalar(select(UserAccount).where(UserAccount.email == email.lower()))
 
+    def get_user_by_google_sub(self, google_sub: str) -> UserAccount | None:
+        with get_db_session() as session:
+            return session.scalar(select(UserAccount).where(UserAccount.google_sub == google_sub))
+
     def get_user_by_id(self, user_id: int) -> UserAccount | None:
         with get_db_session() as session:
             return session.get(UserAccount, user_id)
+
+    def upsert_google_user(self, email: str, full_name: str, google_sub: str) -> UserAccount:
+        normalized_email = email.lower()
+        with get_db_session() as session:
+            user = session.scalar(
+                select(UserAccount).where(
+                    (UserAccount.google_sub == google_sub) | (UserAccount.email == normalized_email)
+                )
+            )
+            if user is None:
+                from app.services.auth import hash_password
+
+                password_hash, password_salt = hash_password(secrets.token_urlsafe(32))
+                user = UserAccount(
+                    email=normalized_email,
+                    full_name=full_name,
+                    password_hash=password_hash,
+                    password_salt=password_salt,
+                    auth_provider="google",
+                    google_sub=google_sub,
+                )
+                session.add(user)
+            else:
+                user.email = normalized_email
+                user.full_name = full_name
+                user.auth_provider = "google"
+                user.google_sub = google_sub
+            session.commit()
+            session.refresh(user)
+            return user
 
     def get_user_by_token(self, token: str) -> UserAccount | None:
         with get_db_session() as session:

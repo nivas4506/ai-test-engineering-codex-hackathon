@@ -23,6 +23,7 @@ AUTH_COOKIE_SECURE = os.getenv("AUTH_COOKIE_SECURE", "true" if IS_VERCEL else "f
 AUTH_COOKIE_SAMESITE = os.getenv("AUTH_COOKIE_SAMESITE", "lax")
 AUTH_COOKIE_DOMAIN = os.getenv("AUTH_COOKIE_DOMAIN") or None
 SAMPLE_REPOSITORY_PATH = BASE_DIR / "samples" / "demo_repo"
+GOOGLE_CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID", "").strip()
 
 
 def _as_bool(raw: str, default: bool = False) -> bool:

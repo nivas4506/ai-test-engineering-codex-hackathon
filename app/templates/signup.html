@@ -5,18 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Sign Up | AI Test Engineering</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <main class="shell auth-shell">
       <section class="hero compact-hero auth-hero">
         <div class="hero-topline">
           <div class="badge">New account</div>
-          <div class="hero-chip">User database enabled</div>
+          <div class="hero-chip">Google OAuth 2.0</div>
         </div>
         <div class="hero-copy">
           <div class="eyebrow">Get started</div>
           <h1>Create your account</h1>
-          <p>Sign up once, then use the same account to log in and keep your project runs attached to your profile.</p>
+          <p>Use Google to create your AI Test Engineering account and keep your runs linked to one profile.</p>
+        </div>
+        <div class="auth-flow-grid" aria-label="Signup flow">
+          <div class="auth-flow-step is-active">
+            <span>01</span>
+            <strong>Start with Google</strong>
+            <p>Choose the Google account you want to use.</p>
+          </div>
+          <div class="auth-flow-step">
+            <span>02</span>
+            <strong>Create profile</strong>
+            <p>Your first sign-in creates the product account.</p>
+          </div>
+          <div class="auth-flow-step">
+            <span>03</span>
+            <strong>Save future runs</strong>
+            <p>Your reports stay attached to that Google identity.</p>
+          </div>
         </div>
       </section>
 
@@ -24,29 +42,22 @@
         <div class="panel-head">
           <div>
             <div class="section-kicker">Sign up</div>
-            <h2>Create a login</h2>
+            <h2>Create your account with Google</h2>
           </div>
-          <div class="panel-note">You can start using the product immediately after signup.</div>
+          <div class="panel-note">Already registered? You can still use the same Google account on the login page.</div>
         </div>
-        <form class="stack" id="signup-form">
-          <label>
-            Full name
-            <input id="signup-name" type="text" required />
-          </label>
-          <label>
-            Email
-            <input id="signup-email" type="email" required />
-          </label>
-          <label>
-            Password
-            <input id="signup-password" type="password" minlength="8" required />
-          </label>
-          <div class="actions">
-            <button class="button" type="submit">Create account</button>
-            <a class="button secondary link-button" href="/login">Already have an account</a>
+        <div class="stack auth-google-stack">
+          <div id="google-signin-shell" class="google-signin-shell">
+            <div id="google-signin-button"></div>
           </div>
-        </form>
-        <div class="auth-message" id="auth-message">Choose a strong password with at least 8 characters.</div>
+          <div class="auth-helper-copy">
+            Your first Google sign-in creates the account automatically. Future sign-ins reuse the same profile.
+          </div>
+        </div>
+        <div class="auth-actions-inline">
+          <a class="button secondary link-button" href="/login">Already have an account</a>
+        </div>
+        <div class="auth-message" id="auth-message">Google sign-up is loading.</div>
       </section>
     </main>
     <script src="/static/auth.js"></script>

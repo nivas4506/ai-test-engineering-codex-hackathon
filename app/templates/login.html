@@ -5,18 +5,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Login | AI Test Engineering</title>
     <link rel="stylesheet" href="/static/styles.css" />
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
   </head>
   <body>
     <main class="shell auth-shell">
       <section class="hero compact-hero auth-hero">
         <div class="hero-topline">
           <div class="badge">Secure access</div>
-          <div class="hero-chip">OAuth2 login</div>
+          <div class="hero-chip">Google OAuth 2.0</div>
         </div>
         <div class="hero-copy">
           <div class="eyebrow">Welcome back</div>
           <h1>Sign in</h1>
-          <p>Use your account to open the product, save your runs, and keep your testing workspace private.</p>
+          <p>Use Google Sign-In to open the product, save your runs, and keep your testing workspace private.</p>
+        </div>
+        <div class="auth-flow-grid" aria-label="Login flow">
+          <div class="auth-flow-step is-active">
+            <span>01</span>
+            <strong>Choose Google</strong>
+            <p>Open the secure Google sign-in prompt.</p>
+          </div>
+          <div class="auth-flow-step">
+            <span>02</span>
+            <strong>Verify identity</strong>
+            <p>Your Google identity is verified on the backend.</p>
+          </div>
+          <div class="auth-flow-step">
+            <span>03</span>
+            <strong>Enter workspace</strong>
+            <p>Your saved runs and profile load automatically.</p>
+          </div>
         </div>
       </section>
 
@@ -24,25 +42,22 @@
         <div class="panel-head">
           <div>
             <div class="section-kicker">Login</div>
-            <h2>Enter your account details</h2>
+            <h2>Continue with Google</h2>
           </div>
-          <div class="panel-note">New here? Create an account first.</div>
+          <div class="panel-note">Your Google account becomes your product account automatically.</div>
         </div>
-        <form class="stack" id="login-form">
-          <label>
-            Email
-            <input id="login-email" type="email" required />
-          </label>
-          <label>
-            Password
-            <input id="login-password" type="password" required />
-          </label>
-          <div class="actions">
-            <button class="button" type="submit">Sign in</button>
-            <a class="button secondary link-button" href="/signup">Create account</a>
+        <div class="stack auth-google-stack">
+          <div id="google-signin-shell" class="google-signin-shell">
+            <div id="google-signin-button"></div>
           </div>
-        </form>
-        <div class="auth-message" id="auth-message">Use the same account each time to keep your saved runs together.</div>
+          <div class="auth-helper-copy">
+            First sign-in creates your profile and links future runs to the same Google identity.
+          </div>
+        </div>
+        <div class="auth-actions-inline">
+          <a class="button secondary link-button" href="/signup">Need a new account?</a>
+        </div>
+        <div class="auth-message" id="auth-message">Google sign-in is loading.</div>
       </section>
     </main>
     <script src="/static/auth.js"></script>

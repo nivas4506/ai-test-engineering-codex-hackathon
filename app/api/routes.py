@@ -12,6 +12,7 @@ from app.core.config import (
     AUTH_COOKIE_NAME,
     AUTH_COOKIE_SAMESITE,
     AUTH_COOKIE_SECURE,
+    GOOGLE_CLIENT_ID,
     OPENAI_REASONING_EFFORT,
     SAMPLE_REPOSITORY_PATH,
 )
@@ -21,6 +22,8 @@ from app.models.schemas import (
     AnalyzeRequest,
     AuthResponse,
     GenerateTestsRequest,
+    GoogleAuthConfigResponse,
+    GoogleAuthRequest,
     OrchestrateRequest,
     RunTestsRequest,
     SignUpRequest,
@@ -31,6 +34,7 @@ from app.models.schemas import (
     UploadResponse,
 )
 from app.services.auth import create_access_token, get_current_user, verify_password
+from app.services.google_auth import google_sign_in_enabled, verify_google_credential
 from app.services.orchestrator import OrchestratorService
 from app.services.openai_test_writer import OpenAITestWriter
 from app.utils.files import (
@@ -47,6 +51,15 @@ orchestrator = OrchestratorService()
 run_repository = RunRepository()
 auth_repository = AuthRepository()
 openai_writer = OpenAITestWriter()
+
+
+@router.get("/auth/google/config", response_model=GoogleAuthConfigResponse)
+def get_google_auth_config():
+    enabled = google_sign_in_enabled()
+    return GoogleAuthConfigResponse(
+        enabled=enabled,
+        client_id=GOOGLE_CLIENT_ID if enabled else None,
+    )
 
 
 def _set_auth_cookie(response: Response, access_token: str) -> None:
@@ -76,6 +89,29 @@ def sign_up(request: SignUpRequest, response: Response):
         full_name=request.full_name,
         password_hash=password_hash,
         password_salt=password_salt,
+    )
+    access_token, expires_at = create_access_token()
+    auth_repository.create_session(user_id=user.id, access_token=access_token, expires_at=expires_at)
+    _set_auth_cookie(response, access_token)
+    return AuthResponse(
+        access_token=access_token,
+        user={"id": user.id, "email": user.email, "full_name": user.full_name},
+    )
+
+
+@router.post("/auth/google", response_model=AuthResponse)
+def login_with_google(request: GoogleAuthRequest, response: Response):
+    try:
+        identity = verify_google_credential(request.credential)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=401, detail="Google sign-in verification failed.") from exc
+
+    user = auth_repository.upsert_google_user(
+        email=identity.email,
+        full_name=identity.full_name,
+        google_sub=identity.google_sub,
     )
     access_token, expires_at = create_access_token()
     auth_repository.create_session(user_id=user.id, access_token=access_token, expires_at=expires_at)

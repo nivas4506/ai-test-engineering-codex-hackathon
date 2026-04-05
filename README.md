@@ -29,6 +29,7 @@ Set these locally or in `.env`:
 $env:OPENAI_API_KEY="your_api_key_here"
 $env:OPENAI_MODEL="gpt-5-mini"
 $env:OPENAI_REASONING_EFFORT="low"
+$env:GOOGLE_CLIENT_ID="your_google_client_id.apps.googleusercontent.com"
 ```
 
 Optional local database:
@@ -39,7 +40,18 @@ $env:DATABASE_URL="sqlite:///./workspace/app.db"
 
 ## OAuth2 and Sessions
 
-The API uses an OAuth2 password-bearer login endpoint at `/auth/token` and stores authenticated browser sessions in the database. For deployed environments, cookies should be secure and the database must be external.
+The app now uses Google OAuth 2.0 in the browser and verifies Google ID tokens on the backend before creating a DB-backed session cookie.
+
+Google Cloud Console values for this project:
+
+- Authorized JavaScript origins:
+  - `http://127.0.0.1:8000`
+  - `http://localhost:8000`
+  - `https://ai-test-engineering-codex-hackathon.vercel.app`
+- Authorized redirect URIs:
+  - none required for the current popup-based Google Sign-In flow
+
+For deployed environments, cookies should be secure and the database must be external.
 
 ## Vercel Deployment
 
