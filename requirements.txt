@@ -6,6 +6,7 @@ python-multipart==0.0.20
 openai>=2.30.0
 SQLAlchemy==2.0.43
 PyMySQL==1.1.1
+psycopg[binary]==3.2.9
 cryptography==45.0.7
 python-dotenv==1.1.1
 google-auth==2.40.3
