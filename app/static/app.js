@@ -37,6 +37,7 @@ const els = {
   modelHint: document.getElementById("model-hint"),
   repoArchiveName: document.getElementById("repo-archive-name"),
   uploadFeedback: document.getElementById("upload-feedback"),
+  projectSourceHint: document.getElementById("project-source-hint"),
 };
 
 const modelState = {
@@ -74,6 +75,14 @@ function sanitizeStoredMission(stored) {
 function writeStoredMission(partial) {
   const nextValue = sanitizeStoredMission({ ...readStoredMission(), ...partial });
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextValue));
+}
+
+function getNormalizedRepositoryPath() {
+  return els.repositoryPath?.value.trim() || "";
+}
+
+function hasRunnableProject() {
+  return Boolean(getNormalizedRepositoryPath() || state.uploadId);
 }
 
 function escapeHtml(value) {
@@ -477,8 +486,23 @@ async function runOrchestration(event) {
   setLoading(true);
   setStatus("Running orchestration...", "running");
 
+  if (!hasRunnableProject()) {
+    setLoading(false);
+    setStatus("ERROR", "error");
+    els.summary.innerHTML = `
+      <div class="json-card">
+        <h3>Agent Request Error</h3>
+        <pre>${escapeHtml("Upload a project or provide a valid repository path before launching the tester agent.")}</pre>
+      </div>
+    `;
+    if (els.runButton) {
+      els.runButton.disabled = false;
+    }
+    return;
+  }
+
   const payload = {
-    repository_path: els.repositoryPath?.value.trim(),
+    repository_path: getNormalizedRepositoryPath() || null,
     max_retries: Number(els.maxRetries?.value),
     model: els.modelName?.value || null,
     upload_id: state.uploadId,
@@ -560,10 +584,10 @@ async function uploadArchive() {
       const message = (typeof data?.detail === "string" && data.detail) || raw || "Upload failed.";
       throw new Error(message);
     }
-    els.repositoryPath.value = data.repository_path;
+    els.repositoryPath.value = "";
     state.uploadId = data.upload_id || null;
     writeStoredMission({
-      repository_path: data.repository_path,
+      repository_path: "",
       upload_id: state.uploadId,
       max_retries: Number(els.maxRetries?.value || 2),
       model: els.modelName?.value || "heuristic",
@@ -571,8 +595,11 @@ async function uploadArchive() {
     if (els.repoArchiveName) {
       els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
-    setUploadFeedback("Upload complete. Repository path has been filled in.", "success");
+    setUploadFeedback("Upload complete. The tester agent can use this uploaded project directly.", "success");
     setStatus(`Agent ready for ${data.original_filename}`);
+    if (els.projectSourceHint) {
+      els.projectSourceHint.textContent = `Uploaded project ready (${data.upload_id}). The tester agent can run directly from this bundle.`;
+    }
   } catch (error) {
     setStatus("UPLOAD ERROR", "error");
     setUploadFeedback(error.message || "Upload failed.", "error");
@@ -778,8 +805,11 @@ if (els.sampleButton) {
       model: els.modelName?.value || "heuristic",
       target_input: els.targetInput?.value.trim() || null,
       testing_objective: els.testingObjective?.value.trim() || null,
-    });
+      });
       setStatus("Sample repository ready");
+      if (els.projectSourceHint) {
+        els.projectSourceHint.textContent = "Sample repository selected. The tester agent will use the server-side sample path.";
+      }
     } catch (error) {
       setStatus("ERROR", "error");
       setUploadFeedback(error.message || "Sample repository is unavailable.", "error");
@@ -819,11 +849,16 @@ function applyStoredMission() {
   if (stored.run_id) {
     state.runId = stored.run_id;
   }
+  if (els.projectSourceHint) {
+    els.projectSourceHint.textContent = state.uploadId
+      ? `Uploaded project ready (${state.uploadId}). The tester agent can run directly from this bundle.`
+      : "If you came from the upload page, the tester agent can run directly from that uploaded project.";
+  }
 }
 
 setStatus("Idle", "idle");
 applyStoredMission();
-if (els.repositoryPath && !els.repositoryPath.value.trim()) {
+if (els.repositoryPath && !els.repositoryPath.value.trim() && !state.uploadId) {
   ensureSamplePath()
     .then((repositoryPath) => {
       els.repositoryPath.value = repositoryPath;

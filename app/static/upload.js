@@ -87,6 +87,14 @@ function writeStoredMission(partial) {
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextValue));
 }
 
+function getNormalizedRepositoryPath() {
+  return els.repositoryPath?.value.trim() || "";
+}
+
+function hasRunnableProject() {
+  return Boolean(getNormalizedRepositoryPath() || state.uploadId);
+}
+
 function setStatus(text, variant = "") {
   if (!els.status) {
     return;
@@ -150,14 +158,15 @@ function updateMissionSummary() {
   }
 
   const selectedModel = modelState.options.find((item) => item.id === (els.modelName?.value || ""));
-  const repositoryValue = els.repositoryPath?.value.trim() || "No repository selected yet.";
-  const uploadValue = state.uploadId ? `Upload stored as ${state.uploadId}.` : "Waiting for a file, folder, or archive.";
+  const repositoryPath = getNormalizedRepositoryPath();
+  const repositoryValue = repositoryPath || (state.uploadId ? "Using the uploaded project bundle." : "No local repository path added.");
+  const uploadValue = state.uploadId ? `Uploaded project ready (${state.uploadId}).` : "Waiting for a file, folder, or archive.";
   const modelValue = selectedModel
     ? `${selectedModel.label}${selectedModel.recommended ? " (recommended)" : ""}`
     : "Loading available testing models.";
-  const nextValue = repositoryValue && repositoryValue !== "No repository selected yet."
+  const nextValue = hasRunnableProject()
     ? "Continue to the run page to launch the tester agent."
-    : "Choose a repository path or upload a project before continuing.";
+    : "Upload a project or add a local repository path before continuing.";
 
   els.missionSummary.innerHTML = `
     <article class="agent-brief-card">
@@ -221,12 +230,12 @@ async function uploadArchive() {
     }
 
     state.uploadId = data.upload_id || null;
-    els.repositoryPath.value = data.repository_path;
+    els.repositoryPath.value = "";
     if (els.repoArchiveName) {
       els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
     writeStoredMission({
-      repository_path: data.repository_path,
+      repository_path: "",
       upload_id: state.uploadId,
       max_retries: Number(els.maxRetries?.value || 2),
       model: els.modelName?.value || "heuristic",
@@ -394,10 +403,10 @@ async function useSampleRepo() {
 
 function continueToRun(event) {
   event.preventDefault();
-  const repositoryPath = els.repositoryPath?.value.trim();
-  if (!repositoryPath) {
-    setStatus("Missing repository", "error");
-    setUploadFeedback("Enter a repository path or upload a project before continuing.", "error");
+  const repositoryPath = getNormalizedRepositoryPath();
+  if (!hasRunnableProject()) {
+    setStatus("Missing project", "error");
+    setUploadFeedback("Upload a project or enter a local repository path before continuing.", "error");
     return;
   }
 

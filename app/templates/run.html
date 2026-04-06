@@ -75,13 +75,14 @@
               <div class="section-kicker">Run controls</div>
               <h2>Mission launcher</h2>
             </div>
-            <div class="panel-note">Adjust the repository path, retry count, and model before starting the tester agent.</div>
+            <div class="panel-note">Launch from an uploaded project bundle or an optional local repository path.</div>
           </div>
           <form class="stack" id="orchestrate-form">
             <label>
-              Repository path
-              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
+              Local repository path <span class="muted-label">(optional)</span>
+              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" />
             </label>
+            <div class="control-hint" id="project-source-hint">If you came from the upload page, the tester agent can run directly from that uploaded project.</div>
             <label>
               Application URL / API endpoint / codebase summary
               <input id="target_input" name="target_input" placeholder="https://app.example.com or POST /login or project summary" />

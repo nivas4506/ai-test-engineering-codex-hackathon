@@ -7,25 +7,25 @@ from pydantic import BaseModel, Field
 
 
 class AnalyzeRequest(BaseModel):
-    repository_path: str
+    repository_path: str | None = None
     upload_id: str | None = None
 
 
 class GenerateTestsRequest(BaseModel):
-    repository_path: str
+    repository_path: str | None = None
     run_id: str | None = None
     model: str | None = None
     upload_id: str | None = None
 
 
 class RunTestsRequest(BaseModel):
-    repository_path: str
+    repository_path: str | None = None
     run_id: str
     upload_id: str | None = None
 
 
 class OrchestrateRequest(BaseModel):
-    repository_path: str
+    repository_path: str | None = None
     max_retries: int = Field(default=2, ge=0, le=5)
     model: str | None = None
     upload_id: str | None = None

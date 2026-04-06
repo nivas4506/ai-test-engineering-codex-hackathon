@@ -127,3 +127,43 @@ def test_uploaded_repository_is_restored_when_temp_path_is_missing(monkeypatch: 
 
     assert orchestrate_response.status_code == 200
     assert orchestrate_response.json()["status"] == "passed"
+
+
+def test_orchestrate_accepts_upload_id_without_repository_path(monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.api.routes as routes
+
+    client = TestClient(app)
+    monkeypatch.setattr(
+        routes,
+        "verify_google_credential",
+        lambda credential: GoogleIdentity(
+            email=f"upload-only-{uuid4().hex[:8]}@example.com",
+            full_name="Upload Only User",
+            google_sub=f"upload-only-{credential}",
+        ),
+    )
+
+    login_response = client.post("/auth/google", json={"credential": "upload-only-credential"})
+    assert login_response.status_code == 200
+
+    upload_response = client.post(
+        "/upload",
+        files={
+            "file": ("math_utils.py", b"def add(a, b):\n    return a + b\n", "text/x-python"),
+        },
+    )
+    assert upload_response.status_code == 200
+    payload = upload_response.json()
+
+    orchestrate_response = client.post(
+        "/orchestrate",
+        json={
+            "upload_id": payload["upload_id"],
+            "max_retries": 1,
+        },
+    )
+
+    assert orchestrate_response.status_code == 200
+    report = orchestrate_response.json()
+    assert report["status"] == "passed"
+    assert report["repository_path"]

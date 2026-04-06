@@ -507,6 +507,12 @@ label {
   color: #ececec;
 }
 
+.muted-label {
+  color: var(--muted);
+  font-size: 0.88em;
+  font-weight: 500;
+}
+
 input,
 select,
 textarea,

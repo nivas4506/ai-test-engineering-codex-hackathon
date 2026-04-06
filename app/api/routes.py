@@ -59,14 +59,19 @@ upload_store = UploadRepository()
 openai_writer = OpenAITestWriter()
 
 
-def _resolve_repository_path(repository_path: str, upload_id: str | None, user_id: int | None) -> str:
-    candidate_path = Path(repository_path).resolve()
-    if candidate_path.exists():
-        return str(candidate_path)
+def _resolve_repository_path(repository_path: str | None, upload_id: str | None, user_id: int | None) -> str:
+    normalized_repository_path = (repository_path or "").strip()
+    candidate_path: Path | None = None
+    if normalized_repository_path:
+        candidate_path = Path(normalized_repository_path).resolve()
+        if candidate_path.exists():
+            return str(candidate_path)
 
-    effective_upload_id = upload_id or extract_upload_id_from_repository_path(repository_path)
+    effective_upload_id = upload_id or extract_upload_id_from_repository_path(normalized_repository_path)
     if not effective_upload_id:
-        raise FileNotFoundError(f"Repository path does not exist: {candidate_path}")
+        if candidate_path is not None:
+            raise FileNotFoundError(f"Repository path does not exist: {candidate_path}")
+        raise FileNotFoundError("Upload a project or provide a valid repository path.")
 
     stored_upload = upload_store.get_upload(effective_upload_id, owner_user_id=user_id)
     if stored_upload is None:

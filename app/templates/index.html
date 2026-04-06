@@ -97,17 +97,17 @@
               <div class="section-kicker">Upload</div>
               <h2>Project intake</h2>
             </div>
-            <div class="panel-note">Prepare the repository path and upload state before moving to the run page.</div>
+            <div class="panel-note">Upload a project first. Local repository paths are optional and mainly for local development.</div>
           </div>
           <form class="stack" id="mission-form">
             <label>
-              Repository path
-              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
+              Local repository path <span class="muted-label">(optional)</span>
+              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" />
             </label>
             <div class="upload-card">
               <div class="upload-copy">
                 <div class="section-kicker">Upload</div>
-                <p class="body-copy">Upload a repository folder, archive, or source files from most programming languages. Supported testing is strongest today for Python, JavaScript, and TypeScript, with generic smoke coverage for wider project shapes.</p>
+                <p class="body-copy">Upload a repository folder, archive, or source files from most programming languages. The run page can launch directly from the uploaded project bundle, so you do not need to paste a server path after upload.</p>
               </div>
               <div class="upload-actions">
                 <div class="upload-picker">
