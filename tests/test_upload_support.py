@@ -32,6 +32,17 @@ def test_upload_accepts_single_package_manifest() -> None:
     assert (repository_path / "package.json").exists()
 
 
+def test_upload_accepts_single_nested_project_file_path() -> None:
+    upload_id, repository_path = save_uploaded_input(
+        "demo-folder/package.json",
+        b'{ "name": "demo", "version": "1.0.0" }',
+    )
+
+    assert upload_id
+    assert repository_path.is_dir()
+    assert (repository_path / "package.json").exists()
+
+
 def test_upload_accepts_bundle_with_go_files() -> None:
     upload_id, repository_path = save_uploaded_bundle(
         [

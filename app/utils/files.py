@@ -186,6 +186,7 @@ def save_uploaded_input(filename: str, content: bytes) -> tuple[str, Path]:
     upload_id = uuid.uuid4().hex[:12]
     upload_root = ensure_directory(UPLOADS_DIR / upload_id)
     archive_path = upload_root / filename
+    ensure_directory(archive_path.parent)
     archive_path.write_bytes(content)
 
     extracted_dir = upload_root / "repo"
