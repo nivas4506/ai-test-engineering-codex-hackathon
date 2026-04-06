@@ -64,6 +64,16 @@ function renderReportDetail(report) {
     </div>
     <div class="report-detail-grid">
       <div class="detail-section">
+        <div class="detail-label">Multi-agent architecture</div>
+        <pre>${escapeHtml(
+          [
+            `Architecture: ${report.architecture || "multi_agent"}`,
+            `Memory records: ${report.memory_context?.length || 0}`,
+            `Agent trace entries: ${report.agent_trace?.length || 0}`,
+          ].join("\n"),
+        )}</pre>
+      </div>
+      <div class="detail-section">
         <div class="detail-label">Test plan</div>
         <pre>${escapeHtml(
           report.test_plan?.length
@@ -175,6 +185,16 @@ function renderReportDetail(report) {
                 ...coverage.suggested_additional_tests.map((item) => `- ${item}`),
               ].join("\n")
             : "Coverage estimate unavailable.",
+        )}</pre>
+      </div>
+      <div class="detail-section detail-section-wide">
+        <div class="detail-label">Agent trace</div>
+        <pre>${escapeHtml(
+          report.agent_trace?.length
+            ? report.agent_trace
+                .map((entry) => `${entry.agent.toUpperCase()} | ${entry.status.toUpperCase()}\n${entry.summary}\n${entry.details.join("\n")}`)
+                .join("\n\n")
+            : "No multi-agent trace was recorded.",
         )}</pre>
       </div>
       <div class="detail-section detail-section-wide">

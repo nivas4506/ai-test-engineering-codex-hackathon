@@ -255,6 +255,14 @@ function setSummary(report) {
     : report.debug_history.at(-1)?.diagnosis || "Agent stopped after the latest execution error.";
   const sections = [
     {
+      title: "Multi-Agent Architecture",
+      items: [
+        `Architecture: ${report.architecture || "multi_agent"}`,
+        `Memory records: ${report.memory_context?.length || 0}`,
+        `Agent trace entries: ${report.agent_trace?.length || 0}`,
+      ],
+    },
+    {
       title: "Test Plan",
       items: report.test_plan?.length
         ? report.test_plan.slice(0, 5).map((item) => `${item.category.toUpperCase()} | ${item.title} -> ${item.target}`)
@@ -343,6 +351,12 @@ function setSummary(report) {
             `Passed: ${report.final_structured_report?.passed ?? 0} | Failed: ${report.final_structured_report?.failed ?? 0}`,
           ]
         : ["No structured observations were recorded."],
+    },
+    {
+      title: "Memory and Agent Trace",
+      items: report.agent_trace?.length
+        ? report.agent_trace.slice(0, 5).map((entry) => `${entry.agent.toUpperCase()} | ${entry.status.toUpperCase()} -> ${entry.summary}`)
+        : ["No agent trace was recorded."],
     },
   ];
 

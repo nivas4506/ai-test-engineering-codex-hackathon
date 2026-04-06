@@ -29,6 +29,12 @@ def test_orchestrator_generates_executes_and_writes_artifacts(
     assert report.coverage_report.estimated_line_coverage > 0
     assert report.improvement_report.rerun_summary
     assert report.improvement_report.ci_cd_suggestions
+    assert report.architecture == "multi_agent"
+    assert report.memory_context
+    assert any(entry.agent == "planner" for entry in report.agent_trace)
+    assert any(entry.agent == "executor" for entry in report.agent_trace)
+    assert any(entry.agent == "critic" for entry in report.agent_trace)
+    assert any(entry.agent == "memory" for entry in report.agent_trace)
     assert report.test_plan
     assert report.execution_steps
     assert report.observations

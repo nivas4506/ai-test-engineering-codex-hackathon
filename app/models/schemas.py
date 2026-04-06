@@ -242,6 +242,21 @@ class ImprovementReport(BaseModel):
     advanced_test_suggestions: list[str] = Field(default_factory=list)
 
 
+class AgentMemoryRecord(BaseModel):
+    type: Literal["bug", "test", "history", "context"]
+    content: str
+    relevance_score: float = Field(ge=0, le=1)
+    severity: Literal["low", "medium", "high"] | None = None
+    source_run_id: str | None = None
+
+
+class AgentTraceEntry(BaseModel):
+    agent: Literal["controller", "planner", "executor", "critic", "memory"]
+    status: Literal["ready", "completed", "failed", "skipped"]
+    summary: str
+    details: list[str] = Field(default_factory=list)
+
+
 class TestPlanItem(BaseModel):
     title: str
     category: Literal["positive", "negative", "edge", "boundary", "security"]
@@ -276,6 +291,7 @@ class FinalStructuredReport(BaseModel):
 
 
 class RunReport(BaseModel):
+    architecture: Literal["multi_agent"] = "multi_agent"
     run_id: str
     repository_path: str
     status: Literal["passed", "failed", "error"]
@@ -289,6 +305,8 @@ class RunReport(BaseModel):
     improvement_report: ImprovementReport = Field(default_factory=ImprovementReport)
     target_input: str | None = None
     testing_objective: str | None = None
+    memory_context: list[AgentMemoryRecord] = Field(default_factory=list)
+    agent_trace: list[AgentTraceEntry] = Field(default_factory=list)
     test_plan: list[TestPlanItem] = Field(default_factory=list)
     execution_steps: list[ExecutionStep] = Field(default_factory=list)
     observations: list[Observation] = Field(default_factory=list)
