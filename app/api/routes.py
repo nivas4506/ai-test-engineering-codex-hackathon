@@ -18,6 +18,7 @@ from app.core.config import (
 )
 from app.db.auth_repository import AuthRepository
 from app.db.repository import RunRepository
+from app.db.upload_repository import UploadRepository
 from app.models.schemas import (
     AnalyzeRequest,
     AvailableModel,
@@ -40,6 +41,9 @@ from app.services.orchestrator import OrchestratorService
 from app.services.openai_test_writer import OpenAITestWriter
 from app.utils.files import (
     create_run_directory,
+    extract_upload_id_from_repository_path,
+    package_repository_bytes,
+    restore_uploaded_repository,
     save_uploaded_bundle,
     save_uploaded_input,
     snapshot_repository_metadata,
@@ -51,7 +55,25 @@ router = APIRouter()
 orchestrator = OrchestratorService()
 run_repository = RunRepository()
 auth_repository = AuthRepository()
+upload_store = UploadRepository()
 openai_writer = OpenAITestWriter()
+
+
+def _resolve_repository_path(repository_path: str, upload_id: str | None, user_id: int | None) -> str:
+    candidate_path = Path(repository_path).resolve()
+    if candidate_path.exists():
+        return str(candidate_path)
+
+    effective_upload_id = upload_id or extract_upload_id_from_repository_path(repository_path)
+    if not effective_upload_id:
+        raise FileNotFoundError(f"Repository path does not exist: {candidate_path}")
+
+    stored_upload = upload_store.get_upload(effective_upload_id, owner_user_id=user_id)
+    if stored_upload is None:
+        raise FileNotFoundError(f"Uploaded repository is no longer available for upload_id={effective_upload_id}")
+
+    restored_path = restore_uploaded_repository(effective_upload_id, stored_upload.bundle_bytes)
+    return str(restored_path)
 
 
 @router.get("/auth/google/config", response_model=GoogleAuthConfigResponse)
@@ -238,6 +260,12 @@ async def upload_repository(
                     raise HTTPException(status_code=400, detail="Each uploaded file must have a name.")
                 bundle_files.append((upload.filename, await upload.read()))
             upload_id, repository_path = save_uploaded_bundle(bundle_files)
+        upload_store.upsert_upload(
+            upload_id=upload_id,
+            original_filename=uploads[0].filename or "uploaded-content",
+            bundle_bytes=package_repository_bytes(repository_path),
+            owner_user_id=current_user.id,
+        )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
@@ -250,7 +278,8 @@ async def upload_repository(
 @router.post("/analyze")
 def analyze_repository(request: AnalyzeRequest, current_user=Depends(get_current_user)):
     try:
-        analysis = orchestrator.analyze(request.repository_path)
+        repository_path = _resolve_repository_path(request.repository_path, request.upload_id, current_user.id)
+        analysis = orchestrator.analyze(repository_path)
         plan = orchestrator.plan(analysis)
         return {"analysis": analysis.model_dump(), "plan": plan.model_dump()}
     except FileNotFoundError as exc:
@@ -263,11 +292,12 @@ def analyze_repository(request: AnalyzeRequest, current_user=Depends(get_current
 def generate_tests(request: GenerateTestsRequest, current_user=Depends(get_current_user)):
     try:
         run_id, run_dir = create_run_directory()
-        repo_path = Path(request.repository_path).resolve()
+        resolved_repository_path = _resolve_repository_path(request.repository_path, request.upload_id, current_user.id)
+        repo_path = Path(resolved_repository_path).resolve()
         snapshot_repository_metadata(repo_path, run_dir)
-        analysis = orchestrator.analyze(request.repository_path)
+        analysis = orchestrator.analyze(resolved_repository_path)
         plan = orchestrator.plan(analysis)
-        generation = orchestrator.generator.generate(request.repository_path, run_dir, analysis, plan, model=request.model)
+        generation = orchestrator.generator.generate(resolved_repository_path, run_dir, analysis, plan, model=request.model)
         write_json(run_dir / "artifacts" / "analysis.json", analysis.model_dump())
         write_json(run_dir / "artifacts" / "plan.json", plan.model_dump())
         write_json(run_dir / "artifacts" / "generation.json", generation.model_dump())
@@ -283,7 +313,8 @@ def run_tests(request: RunTestsRequest, current_user=Depends(get_current_user)):
     run_dir = Path(__file__).resolve().parents[2] / "workspace" / "runs" / request.run_id
     if not run_dir.exists():
         raise HTTPException(status_code=404, detail=f"Run ID not found: {request.run_id}")
-    execution = orchestrator.executor.run(request.repository_path, run_dir)
+    resolved_repository_path = _resolve_repository_path(request.repository_path, request.upload_id, current_user.id)
+    execution = orchestrator.executor.run(resolved_repository_path, run_dir)
     write_json(run_dir / "artifacts" / "execution.json", execution.model_dump())
     return execution.model_dump()
 
@@ -291,8 +322,9 @@ def run_tests(request: RunTestsRequest, current_user=Depends(get_current_user)):
 @router.post("/orchestrate")
 def orchestrate_tests(request: OrchestrateRequest, current_user=Depends(get_current_user)):
     try:
+        resolved_repository_path = _resolve_repository_path(request.repository_path, request.upload_id, current_user.id)
         report = orchestrator.orchestrate(
-            request.repository_path,
+            resolved_repository_path,
             request.max_retries,
             user_id=current_user.id,
             model=request.model,

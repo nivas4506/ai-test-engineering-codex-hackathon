@@ -8,23 +8,27 @@ from pydantic import BaseModel, Field
 
 class AnalyzeRequest(BaseModel):
     repository_path: str
+    upload_id: str | None = None
 
 
 class GenerateTestsRequest(BaseModel):
     repository_path: str
     run_id: str | None = None
     model: str | None = None
+    upload_id: str | None = None
 
 
 class RunTestsRequest(BaseModel):
     repository_path: str
     run_id: str
+    upload_id: str | None = None
 
 
 class OrchestrateRequest(BaseModel):
     repository_path: str
     max_retries: int = Field(default=2, ge=0, le=5)
     model: str | None = None
+    upload_id: str | None = None
 
 
 class SignUpRequest(BaseModel):

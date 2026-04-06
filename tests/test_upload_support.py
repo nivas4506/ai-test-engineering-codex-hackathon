@@ -1,8 +1,12 @@
 from pathlib import Path
+from uuid import uuid4
 
 import pytest
+from fastapi.testclient import TestClient
 
+from app.main import app
 from app.services.repository_analyzer import RepositoryAnalyzer
+from app.services.google_auth import GoogleIdentity
 from app.utils.files import save_uploaded_bundle, save_uploaded_input
 
 
@@ -38,3 +42,49 @@ def test_analyzer_explains_unsupported_language(tmp_path: Path) -> None:
 
     with pytest.raises(ValueError, match="currently supports Python, JavaScript, and TypeScript projects only"):
         RepositoryAnalyzer().analyze(str(repository))
+
+
+def test_uploaded_repository_is_restored_when_temp_path_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.api.routes as routes
+
+    client = TestClient(app)
+    monkeypatch.setattr(
+        routes,
+        "verify_google_credential",
+        lambda credential: GoogleIdentity(
+            email=f"restore-{uuid4().hex[:8]}@example.com",
+            full_name="Restore User",
+            google_sub=f"restore-{credential}",
+        ),
+    )
+
+    login_response = client.post("/auth/google", json={"credential": "restore-credential"})
+    assert login_response.status_code == 200
+
+    upload_response = client.post(
+        "/upload",
+        files={
+            "file": ("math_utils.py", b"def add(a, b):\n    return a + b\n", "text/x-python"),
+        },
+    )
+    assert upload_response.status_code == 200
+    payload = upload_response.json()
+
+    uploaded_repo_path = Path(payload["repository_path"])
+    assert uploaded_repo_path.exists()
+    for child in uploaded_repo_path.rglob("*"):
+        if child.is_file():
+            child.unlink()
+    uploaded_repo_path.rmdir()
+
+    orchestrate_response = client.post(
+        "/orchestrate",
+        json={
+            "repository_path": payload["repository_path"],
+            "upload_id": payload["upload_id"],
+            "max_retries": 1,
+        },
+    )
+
+    assert orchestrate_response.status_code == 200
+    assert orchestrate_response.json()["status"] == "passed"

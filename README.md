@@ -1,8 +1,98 @@
 # AI Test Engineering
 
-AI Test Engineering is a FastAPI product that analyzes repositories, generates tests, runs them, retries on failures, and presents the results in a user-facing dashboard.
+<p align="center">
+  <strong>AI-powered repository testing with analysis, generation, execution, debugging, reporting, and deployment-friendly automation.</strong>
+</p>
 
-## Local Run
+<p align="center">
+  <a href="https://ai-test-engineering-codex-hackathon.vercel.app">Live App</a>
+  &middot;
+  <a href="https://ai-test-engineering-codex-hackathon.vercel.app/login">Login</a>
+  &middot;
+  <a href="https://ai-test-engineering-codex-hackathon.vercel.app/health">Health</a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.13-111111?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.13" />
+  <img src="https://img.shields.io/badge/FastAPI-0.116-111111?style=for-the-badge&logo=fastapi&logoColor=00C7B7" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Tests-30%20Passing-111111?style=for-the-badge&logo=pytest&logoColor=white" alt="Tests passing" />
+  <img src="https://img.shields.io/badge/Coverage-70%25-111111?style=for-the-badge&logo=codecov&logoColor=white" alt="Coverage" />
+  <img src="https://img.shields.io/badge/Deploy-Vercel-111111?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+  <img src="https://img.shields.io/badge/Auth-Google%20OAuth%202.0-111111?style=for-the-badge&logo=google&logoColor=white" alt="Google OAuth" />
+</p>
+
+---
+
+## What This Is
+
+AI Test Engineering is a FastAPI application that:
+
+- analyzes uploaded repositories
+- detects supported source files
+- generates tests with heuristic or OpenAI-backed generation
+- executes them with real runners
+- retries more safely when failures occur
+- stores reports and user-scoped run history
+- exposes a visual dashboard for workflows, results, and profile data
+
+It is built to stay product-facing while still being testable, deployable, and automation-friendly.
+
+---
+
+## Product Snapshot
+
+| Area | What it does |
+| --- | --- |
+| `Overview` | upload a repo, choose a model, run the orchestration flow |
+| `How It Works` | explains the planner, generator, executor, and debugger pipeline |
+| `What To Do` | suggests next actions after a run |
+| `Results` | shows saved runs and report details |
+| `Profile` | user info, run stats, and account-linked workspace history |
+
+---
+
+## Architecture Flow
+
+```mermaid
+flowchart LR
+    A["Upload Repository"] --> B["Analyze Source Files"]
+    B --> C["Create Test Plan"]
+    C --> D["Generate Tests"]
+    D --> E["Execute Tests"]
+    E --> F{"Pass?"}
+    F -- "Yes" --> G["Persist Report"]
+    F -- "No" --> H["Debugger Review"]
+    H --> I["Safer Retry Strategy"]
+    I --> D
+    G --> J["Dashboard + Saved Runs"]
+```
+
+---
+
+## Feature Surface
+
+### Core capabilities
+
+- Python, JavaScript, and TypeScript repository analysis
+- AI model selection for test generation
+- heuristic fallback when OpenAI is unavailable
+- Google OAuth 2.0 sign-in
+- DB-backed sessions and saved runs
+- production deployment on Vercel
+- isolated automated test architecture
+
+### Current execution support
+
+| Language | Analysis | Generation | Execution |
+| --- | --- | --- | --- |
+| Python | Yes | Yes | `pytest` |
+| JavaScript | Yes | Yes | `node --test` |
+| TypeScript | Yes | Yes | project tooling dependent |
+| Other code uploads | Accepted | identified | reported as not yet executable |
+
+---
+
+## Quick Start
 
 ```powershell
 python -m venv .venv
@@ -11,174 +101,162 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-The project targets Python `3.13`.
-
-Open:
+Open locally:
 
 - `http://127.0.0.1:8000/`
-- `http://127.0.0.1:8000/agents`
-- `http://127.0.0.1:8000/playbooks`
+- `http://127.0.0.1:8000/login`
 - `http://127.0.0.1:8000/reports`
 - `http://127.0.0.1:8000/profile`
 
-## Testing Architecture
-
-The test suite is isolated from production code and does not modify application endpoints, UI, or business logic.
-
-Testing structure:
-
-```text
-tests/
-  conftest.py
-  unit/
-    test_auth_service.py
-    test_debugger_service.py
-    test_executor_service.py
-    test_planner_service.py
-  integration/
-    test_orchestrator_flow.py
-  e2e/
-    test_user_journey.py
-  test_auth_api.py
-  test_smoke.py
-  test_upload_support.py
-```
-
-What is covered:
-
-- Unit tests for core functions and service classes
-  - auth hashing, token creation, and current-user resolution
-  - planner strategy and module prioritization
-  - debugger diagnosis paths
-  - executor command building, timeout handling, and output parsing
-- Integration tests for module interaction
-  - analyzer -> planner -> generator -> executor orchestration flow
-- Optional end-to-end style flow
-  - Google login -> authenticated API access -> system status
-
-Safety and isolation:
-
-- Tests run under `pytest`
-- Temporary repositories and run directories are created under pytest temp folders
-- External AI generation is not required for tests
-- External services are mocked where needed
-- Tests do not mutate production UI code or deployed data structures
-
-## Running Tests
-
-Install test dependencies with the main app requirements:
-
-```powershell
-pip install -r requirements.txt
-```
-
-Run the full suite:
-
-```powershell
-pytest
-```
-
-Run only unit tests:
-
-```powershell
-pytest -m unit
-```
-
-Run only integration tests:
-
-```powershell
-pytest -m integration
-```
-
-Run the optional end-to-end style flow:
-
-```powershell
-pytest -m e2e
-```
-
-Run a single module:
-
-```powershell
-pytest tests/unit/test_executor_service.py
-```
+---
 
 ## Environment
-
-Set these locally or in `.env`:
 
 ```powershell
 $env:OPENAI_API_KEY="your_api_key_here"
 $env:OPENAI_MODEL="gpt-5-mini"
 $env:OPENAI_REASONING_EFFORT="low"
 $env:GOOGLE_CLIENT_ID="your_google_client_id.apps.googleusercontent.com"
-```
-
-Optional local database:
-
-```powershell
 $env:DATABASE_URL="sqlite:///./workspace/app.db"
 ```
 
-## OAuth2 and Sessions
+Production should use a real external database, not SQLite.
 
-The app now uses Google OAuth 2.0 in the browser and verifies Google ID tokens on the backend before creating a DB-backed session cookie.
+---
 
-Google Cloud Console values for this project:
+## Testing Layer
+
+The testing architecture is external and non-intrusive. It does not alter runtime UI, endpoints, request shapes, or business logic.
+
+```text
+automation/
+  run_tests.py
+tests/
+  conftest.py
+  unit/
+  integration/
+  e2e/
+```
+
+### Run tests
+
+```powershell
+pytest
+pytest -m unit
+pytest -m integration
+pytest -m e2e
+python automation\run_tests.py
+```
+
+### Generated reports
+
+- `automation/reports/junit.xml`
+- `automation/reports/coverage.xml`
+- `automation/reports/htmlcov/`
+- `automation/reports/summary.json`
+- `automation/reports/summary.md`
+
+---
+
+## CI/CD
+
+| Pipeline | Purpose |
+| --- | --- |
+| `.github/workflows/ci.yml` | runs automated tests and uploads reports |
+| `.github/workflows/vercel-preview.yml` | preview deployment flow |
+| `.github/workflows/vercel-production.yml` | production deployment flow |
+| `Jenkinsfile` | Jenkins-compatible test runner pipeline |
+
+GitHub Actions secrets:
+
+- `VERCEL_TOKEN`
+- `VERCEL_ORG_ID`
+- `VERCEL_PROJECT_ID`
+
+Recommended app secrets:
+
+- `OPENAI_API_KEY`
+- `DATABASE_URL`
+- `GOOGLE_CLIENT_ID`
+
+---
+
+## OAuth Notes
+
+Google Cloud Console values:
 
 - Authorized JavaScript origins:
   - `http://127.0.0.1:8000`
   - `http://localhost:8000`
   - `https://ai-test-engineering-codex-hackathon.vercel.app`
 - Authorized redirect URIs:
-  - none required for the current popup-based Google Sign-In flow
+  - none required for the current popup-based flow
 
-For deployed environments, cookies should be secure and the database must be external.
+---
 
-## Vercel Deployment
+## Coverage Summary
 
-The repo includes:
+Latest automated run:
 
-- `vercel.json` to disable duplicate Git-triggered deploys when GitHub Actions handles CI/CD
-- `app/index.py` as the Vercel Python entrypoint
-- GitHub Actions for CI, preview deploys, and production deploys
+- Test status: `PASS`
+- Total tests: `30`
+- Coverage: `70%`
+- Current notable warning: deprecation warnings around `datetime.utcnow()`
 
-Recommended Vercel environment variables:
+### Best next coverage improvements
 
-- `OPENAI_API_KEY`
-- `OPENAI_MODEL`
-- `OPENAI_REASONING_EFFORT`
-- `DATABASE_URL`
-- `AUTH_COOKIE_SECURE=true`
+- add browser-driven UI verification for the full authenticated flow
+- add more JavaScript and TypeScript execution fixtures
+- add persistence-layer tests around saved runs and upload restoration
+- add targeted coverage for error branches in API routes
 
-Important:
+---
 
-- Use PostgreSQL or MySQL on Vercel. Do not rely on SQLite for real deployed user data.
-- The app writes temporary uploads and generated test artifacts under `/tmp/ai-test-engineering` on Vercel.
+## Repo Structure
 
-## GitHub Actions Secrets
+<details>
+<summary>Open project tree</summary>
 
-Set these repository secrets before enabling the workflows:
+```text
+app/
+  api/
+  core/
+  db/
+  models/
+  services/
+  static/
+  templates/
+  utils/
+automation/
+tests/
+.github/workflows/
+Jenkinsfile
+vercel.json
+requirements.txt
+pytest.ini
+```
 
-- `VERCEL_TOKEN`
-- `VERCEL_ORG_ID`
-- `VERCEL_PROJECT_ID`
+</details>
 
-Optional app secrets:
+---
 
-- `OPENAI_API_KEY`
-- `DATABASE_URL`
+## Design Notes
 
-## CI/CD Flow
+This repo intentionally keeps:
 
-- `.github/workflows/ci.yml`: runs `pytest`
-- `.github/workflows/vercel-preview.yml`: tests, builds, and deploys preview environments for PRs
-- `.github/workflows/vercel-production.yml`: tests, builds, and deploys production on `main`
-- `.github/workflows/k8s-deploy.yml`: left as manual-only so it no longer conflicts with Vercel
+- product UI separate from test architecture
+- runtime logic separate from automation logic
+- deployment concerns separate from repository analysis/generation logic
+- local and CI/CD test execution aligned through the same automation runner
+
+---
 
 ## Demo Video
-https://github.com/user-attachments/assets/6496206c-f654-42d1-8dbd-268c217dd288
-## Language Support
 
-- Python: analysis, test generation, and `pytest` execution
-- JavaScript: analysis, test generation, and `node --test` execution
-- TypeScript: analysis and generation, with execution depending on project tooling
+[Watch the demo](https://github.com/user-attachments/assets/6496206c-f654-42d1-8dbd-268c217dd288)
+
+---
+
+## Status
+
+> Active prototype with live deployment, authenticated dashboard, AI model selection, externalized testing architecture, durable upload recovery, and CI-ready execution pipeline.

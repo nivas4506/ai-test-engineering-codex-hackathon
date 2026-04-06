@@ -13,6 +13,7 @@ env/
 workspace/runs/
 workspace/uploads/
 workspace/*.db
+automation/reports/
 
 k8s/*secret.yaml
 

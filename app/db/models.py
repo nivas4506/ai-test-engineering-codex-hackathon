@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, func
+from sqlalchemy import JSON, DateTime, Float, ForeignKey, Integer, LargeBinary, String, Text, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -69,6 +69,18 @@ class UserSession(Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
     user: Mapped[UserAccount] = relationship(back_populates="sessions")
+
+
+class UploadedRepository(Base):
+    __tablename__ = "uploaded_repositories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    upload_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    owner_user_id: Mapped[int | None] = mapped_column(ForeignKey("user_accounts.id", ondelete="SET NULL"), nullable=True, index=True)
+    original_filename: Mapped[str] = mapped_column(String(512))
+    bundle_name: Mapped[str] = mapped_column(String(255), default="repository.zip")
+    bundle_bytes: Mapped[bytes] = mapped_column(LargeBinary)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
 class RunGenerationAttempt(Base):

@@ -2,6 +2,7 @@ const state = {
   runId: null,
   latestReport: null,
   samplePath: "",
+  uploadId: null,
 };
 
 const systemState = {
@@ -282,6 +283,7 @@ async function runOrchestration(event) {
     repository_path: els.repositoryPath.value.trim(),
     max_retries: Number(els.maxRetries.value),
     model: els.modelName?.value || null,
+    upload_id: state.uploadId,
   };
 
   try {
@@ -353,6 +355,7 @@ async function uploadArchive() {
       throw new Error(message);
     }
     els.repositoryPath.value = data.repository_path;
+    state.uploadId = data.upload_id || null;
     if (els.repoArchiveName) {
       els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
@@ -539,6 +542,7 @@ els.repoArchive.addEventListener("change", handleArchiveSelection);
 els.sampleButton.addEventListener("click", async () => {
   try {
     els.repositoryPath.value = await ensureSamplePath();
+    state.uploadId = null;
     setStatus("Sample repository ready");
   } catch (error) {
     setStatus("ERROR", "error");

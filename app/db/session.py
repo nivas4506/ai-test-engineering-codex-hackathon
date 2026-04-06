@@ -41,12 +41,13 @@ def get_db_session() -> Session:
 def _run_lightweight_migrations() -> None:
     inspector = inspect(engine)
     table_names = set(inspector.get_table_names())
-    if "run_records" not in table_names:
-        return
-
-    columns = {column["name"] for column in inspector.get_columns("run_records")}
     with engine.begin() as connection:
-        if "owner_user_id" not in columns:
+        if "run_records" in table_names:
+            columns = {column["name"] for column in inspector.get_columns("run_records")}
+        else:
+            columns = set()
+
+        if "run_records" in table_names and "owner_user_id" not in columns:
             ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER"
             if not DATABASE_URL.startswith("sqlite"):
                 ddl = "ALTER TABLE run_records ADD COLUMN owner_user_id INTEGER NULL"
@@ -59,3 +60,13 @@ def _run_lightweight_migrations() -> None:
                 connection.execute(text("UPDATE user_accounts SET auth_provider = 'password' WHERE auth_provider IS NULL"))
             if "google_sub" not in user_columns:
                 connection.execute(text("ALTER TABLE user_accounts ADD COLUMN google_sub VARCHAR(255)"))
+
+        if "uploaded_repositories" in table_names:
+            upload_columns = {column["name"] for column in inspector.get_columns("uploaded_repositories")}
+            if "owner_user_id" not in upload_columns:
+                ddl = "ALTER TABLE uploaded_repositories ADD COLUMN owner_user_id INTEGER"
+                if not DATABASE_URL.startswith("sqlite"):
+                    ddl = "ALTER TABLE uploaded_repositories ADD COLUMN owner_user_id INTEGER NULL"
+                connection.execute(text(ddl))
+            if "bundle_name" not in upload_columns:
+                connection.execute(text("ALTER TABLE uploaded_repositories ADD COLUMN bundle_name VARCHAR(255) DEFAULT 'repository.zip'"))

@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import json
+import re
 import shutil
 import tarfile
 import uuid
 import zipfile
 from datetime import datetime
+from io import BytesIO
 from pathlib import Path
 from typing import Any
 
@@ -68,6 +70,7 @@ ALLOWED_CODE_SUFFIXES = TESTABLE_SOURCE_SUFFIXES | {
     ".cmd",
 }
 UNSUPPORTED_ARCHIVE_SUFFIXES = {".rar", ".7z", ".bz2", ".xz"}
+UPLOAD_PATH_PATTERN = re.compile(r"[/\\]uploads[/\\](?P<upload_id>[a-f0-9]{12})[/\\]repo(?:[/\\]|$)")
 
 
 def ensure_directory(path: Path) -> Path:
@@ -190,6 +193,46 @@ def save_uploaded_bundle(files: list[tuple[str, bytes]]) -> tuple[str, Path]:
 
     _validate_uploaded_repository(repo_root)
     return upload_id, repo_root
+
+
+def package_repository_bytes(path: Path) -> bytes:
+    source = path.resolve()
+    buffer = BytesIO()
+    with zipfile.ZipFile(buffer, mode="w", compression=zipfile.ZIP_DEFLATED) as archive:
+        if source.is_file():
+            archive.writestr(source.name, source.read_bytes())
+        else:
+            for file_path in sorted(source.rglob("*")):
+                if file_path.is_file():
+                    archive.write(file_path, arcname=file_path.relative_to(source).as_posix())
+    return buffer.getvalue()
+
+
+def restore_uploaded_repository(upload_id: str, bundle_bytes: bytes) -> Path:
+    upload_root = ensure_directory(UPLOADS_DIR / upload_id)
+    extracted_dir = upload_root / "repo"
+    if extracted_dir.exists():
+        shutil.rmtree(extracted_dir)
+    ensure_directory(extracted_dir)
+
+    archive_buffer = BytesIO(bundle_bytes)
+    with zipfile.ZipFile(archive_buffer) as archive:
+        for member in archive.infolist():
+            member_path = Path(member.filename)
+            if member_path.is_absolute() or ".." in member_path.parts:
+                raise ValueError("Stored upload contains unsafe paths.")
+            archive.extract(member, extracted_dir)
+
+    normalized_root = _normalize_extracted_root(extracted_dir)
+    _validate_uploaded_repository(normalized_root)
+    return normalized_root
+
+
+def extract_upload_id_from_repository_path(repository_path: str | None) -> str | None:
+    if not repository_path:
+        return None
+    match = UPLOAD_PATH_PATTERN.search(repository_path)
+    return match.group("upload_id") if match else None
 
 
 def _extract_zip_archive(archive_path: Path, extracted_dir: Path) -> None:
