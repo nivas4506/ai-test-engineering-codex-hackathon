@@ -21,6 +21,87 @@ Open:
 - `http://127.0.0.1:8000/reports`
 - `http://127.0.0.1:8000/profile`
 
+## Testing Architecture
+
+The test suite is isolated from production code and does not modify application endpoints, UI, or business logic.
+
+Testing structure:
+
+```text
+tests/
+  conftest.py
+  unit/
+    test_auth_service.py
+    test_debugger_service.py
+    test_executor_service.py
+    test_planner_service.py
+  integration/
+    test_orchestrator_flow.py
+  e2e/
+    test_user_journey.py
+  test_auth_api.py
+  test_smoke.py
+  test_upload_support.py
+```
+
+What is covered:
+
+- Unit tests for core functions and service classes
+  - auth hashing, token creation, and current-user resolution
+  - planner strategy and module prioritization
+  - debugger diagnosis paths
+  - executor command building, timeout handling, and output parsing
+- Integration tests for module interaction
+  - analyzer -> planner -> generator -> executor orchestration flow
+- Optional end-to-end style flow
+  - Google login -> authenticated API access -> system status
+
+Safety and isolation:
+
+- Tests run under `pytest`
+- Temporary repositories and run directories are created under pytest temp folders
+- External AI generation is not required for tests
+- External services are mocked where needed
+- Tests do not mutate production UI code or deployed data structures
+
+## Running Tests
+
+Install test dependencies with the main app requirements:
+
+```powershell
+pip install -r requirements.txt
+```
+
+Run the full suite:
+
+```powershell
+pytest
+```
+
+Run only unit tests:
+
+```powershell
+pytest -m unit
+```
+
+Run only integration tests:
+
+```powershell
+pytest -m integration
+```
+
+Run the optional end-to-end style flow:
+
+```powershell
+pytest -m e2e
+```
+
+Run a single module:
+
+```powershell
+pytest tests/unit/test_executor_service.py
+```
+
 ## Environment
 
 Set these locally or in `.env`:
