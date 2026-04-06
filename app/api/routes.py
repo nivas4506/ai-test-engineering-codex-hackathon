@@ -328,6 +328,8 @@ def orchestrate_tests(request: OrchestrateRequest, current_user=Depends(get_curr
             request.max_retries,
             user_id=current_user.id,
             model=request.model,
+            target_input=request.target_input,
+            testing_objective=request.testing_objective,
         )
         return report.model_dump()
     except FileNotFoundError as exc:

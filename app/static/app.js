@@ -17,6 +17,8 @@ const systemState = {
 const els = {
   form: document.getElementById("orchestrate-form"),
   repositoryPath: document.getElementById("repository_path"),
+  targetInput: document.getElementById("target_input"),
+  testingObjective: document.getElementById("testing_objective"),
   repoArchive: document.getElementById("repo_archive"),
   maxRetries: document.getElementById("max_retries"),
   modelName: document.getElementById("model_name"),
@@ -235,6 +237,24 @@ function setSummary(report) {
     : report.debug_history.at(-1)?.diagnosis || "Agent stopped after the latest execution error.";
   const sections = [
     {
+      title: "Test Plan",
+      items: report.test_plan?.length
+        ? report.test_plan.slice(0, 5).map((item) => `${item.category.toUpperCase()} | ${item.title} -> ${item.target}`)
+        : ["No explicit test plan was recorded."],
+    },
+    {
+      title: "Execution Steps",
+      items: report.execution_steps?.length
+        ? report.execution_steps.slice(0, 5).map((step) => {
+            const parts = [step.action];
+            if (step.value) parts.push(step.value);
+            if (step.selector) parts.push(`selector=${step.selector}`);
+            if (step.expected) parts.push(`expect=${step.expected}`);
+            return parts.join(" | ");
+          })
+        : ["No structured execution steps were recorded."],
+    },
+    {
       title: "Codebase Analysis",
       items: [
         `${moduleCount} modules`,
@@ -295,6 +315,16 @@ function setSummary(report) {
             report.improvement_report?.rerun_summary || nextMove,
           ]
         : ["Coverage estimate unavailable."],
+    },
+    {
+      title: "Observations and Final Report",
+      items: report.observations?.length
+        ? [
+            ...report.observations.slice(0, 3).map((item) => `${item.status.toUpperCase()} | ${item.title} -> ${item.detail}`),
+            `Tests run: ${report.final_structured_report?.tests_run ?? 0}`,
+            `Passed: ${report.final_structured_report?.passed ?? 0} | Failed: ${report.final_structured_report?.failed ?? 0}`,
+          ]
+        : ["No structured observations were recorded."],
     },
   ];
 
@@ -420,6 +450,8 @@ async function runOrchestration(event) {
     max_retries: Number(els.maxRetries?.value),
     model: els.modelName?.value || null,
     upload_id: state.uploadId,
+    target_input: els.targetInput?.value.trim() || null,
+    testing_objective: els.testingObjective?.value.trim() || null,
   };
   writeStoredMission(payload);
 
@@ -708,11 +740,13 @@ if (els.sampleButton) {
       }
       state.uploadId = null;
       writeStoredMission({
-        repository_path: repositoryPath,
-        upload_id: null,
-        max_retries: Number(els.maxRetries?.value || 2),
-        model: els.modelName?.value || "heuristic",
-      });
+      repository_path: repositoryPath,
+      upload_id: null,
+      max_retries: Number(els.maxRetries?.value || 2),
+      model: els.modelName?.value || "heuristic",
+      target_input: els.targetInput?.value.trim() || null,
+      testing_objective: els.testingObjective?.value.trim() || null,
+    });
       setStatus("Sample repository ready");
     } catch (error) {
       setStatus("ERROR", "error");
@@ -737,6 +771,12 @@ function applyStoredMission() {
   }
   if (typeof stored.max_retries === "number" && els.maxRetries) {
     els.maxRetries.value = String(stored.max_retries);
+  }
+  if (stored.target_input && els.targetInput) {
+    els.targetInput.value = stored.target_input;
+  }
+  if (stored.testing_objective && els.testingObjective) {
+    els.testingObjective.value = stored.testing_objective;
   }
   if (stored.upload_id) {
     state.uploadId = stored.upload_id;

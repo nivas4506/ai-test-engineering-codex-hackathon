@@ -34,6 +34,7 @@ function renderReportDetail(report) {
   const endpointCount = report.analysis.api_endpoints?.length || 0;
   const coverage = report.coverage_report;
   const improvement = report.improvement_report;
+  const finalStructuredReport = report.final_structured_report;
 
   reportDetail.innerHTML = `
     <div class="detail-hero">
@@ -62,6 +63,22 @@ function renderReportDetail(report) {
       </div>
     </div>
     <div class="report-detail-grid">
+      <div class="detail-section">
+        <div class="detail-label">Test plan</div>
+        <pre>${escapeHtml(
+          report.test_plan?.length
+            ? report.test_plan
+                .map((item) => `[${item.category.toUpperCase()}] ${item.title} -> ${item.target}\n${item.rationale}`)
+                .join("\n\n")
+            : "No explicit test plan was recorded.",
+        )}</pre>
+      </div>
+      <div class="detail-section">
+        <div class="detail-label">Execution steps (JSON)</div>
+        <pre>${escapeHtml(
+          JSON.stringify(report.execution_steps || [], null, 2),
+        )}</pre>
+      </div>
       <div class="detail-section">
         <div class="detail-label">Codebase summary</div>
         <pre>${escapeHtml(
@@ -158,6 +175,24 @@ function renderReportDetail(report) {
                 ...coverage.suggested_additional_tests.map((item) => `- ${item}`),
               ].join("\n")
             : "Coverage estimate unavailable.",
+        )}</pre>
+      </div>
+      <div class="detail-section detail-section-wide">
+        <div class="detail-label">Observations</div>
+        <pre>${escapeHtml(
+          report.observations?.length
+            ? report.observations
+                .map((item) => `${item.status.toUpperCase()} | ${item.title}\n${item.detail}`)
+                .join("\n\n")
+            : "No structured observations were recorded.",
+        )}</pre>
+      </div>
+      <div class="detail-section detail-section-wide">
+        <div class="detail-label">Final report</div>
+        <pre>${escapeHtml(
+          finalStructuredReport
+            ? JSON.stringify(finalStructuredReport, null, 2)
+            : "No final structured report was recorded.",
         )}</pre>
       </div>
       <div class="detail-section detail-section-wide">

@@ -83,6 +83,14 @@
               <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
             </label>
             <label>
+              Application URL / API endpoint / codebase summary
+              <input id="target_input" name="target_input" placeholder="https://app.example.com or POST /login or project summary" />
+            </label>
+            <label>
+              Testing objective
+              <textarea id="testing_objective" name="testing_objective" placeholder="Test login, checkout, API reliability, signup validation, or another critical flow"></textarea>
+            </label>
+            <label>
               Max retries
               <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />
             </label>

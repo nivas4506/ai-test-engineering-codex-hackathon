@@ -6,11 +6,16 @@ from app.models.schemas import (
     AnalysisResult,
     CoverageReport,
     DebugResult,
+    ExecutionStep,
     ExecutionResult,
+    FinalBugReport,
+    FinalStructuredReport,
     GenerationResult,
     ImprovementReport,
+    Observation,
     PlanResult,
     RunReport,
+    TestPlanItem,
 )
 from app.db.repository import RunRepository
 from app.services.debugger import DebuggerService
@@ -42,6 +47,8 @@ class OrchestratorService:
         max_retries: int,
         user_id: int | None = None,
         model: str | None = None,
+        target_input: str | None = None,
+        testing_objective: str | None = None,
     ) -> RunReport:
         run_id, run_dir = create_run_directory()
         repo_path = Path(repository_path).resolve()
@@ -49,6 +56,7 @@ class OrchestratorService:
 
         analysis = self.analyze(str(repo_path))
         plan = self.plan(analysis)
+        test_plan = self._build_test_plan(analysis, plan, testing_objective)
         generation_history: list[GenerationResult] = []
         execution_history: list[ExecutionResult] = []
         debug_history: list[DebugResult] = []
@@ -98,6 +106,21 @@ class OrchestratorService:
         artifact_paths["improvement_report"] = str(
             write_json(run_dir / "artifacts" / "improvement_report.json", improvement_report.model_dump())
         )
+        execution_steps = self._build_execution_steps(repo_path, analysis, testing_objective)
+        artifact_paths["execution_steps"] = str(
+            write_json(run_dir / "artifacts" / "execution_steps.json", [step.model_dump() for step in execution_steps])
+        )
+        observations = self._build_observations(analysis, execution_history, debug_history)
+        artifact_paths["observations"] = str(
+            write_json(run_dir / "artifacts" / "observations.json", [item.model_dump() for item in observations])
+        )
+        final_structured_report = self._build_final_structured_report(execution_history, debug_history)
+        artifact_paths["final_structured_report"] = str(
+            write_json(run_dir / "artifacts" / "final_structured_report.json", final_structured_report.model_dump())
+        )
+        artifact_paths["test_plan"] = str(
+            write_json(run_dir / "artifacts" / "test_plan.json", [item.model_dump() for item in test_plan])
+        )
 
         report = RunReport(
             run_id=run_id,
@@ -111,12 +134,174 @@ class OrchestratorService:
             debug_history=debug_history,
             coverage_report=coverage_report,
             improvement_report=improvement_report,
+            target_input=target_input,
+            testing_objective=testing_objective,
+            test_plan=test_plan,
+            execution_steps=execution_steps,
+            observations=observations,
+            final_structured_report=final_structured_report,
             artifact_paths=artifact_paths,
         )
         report_path = write_json(run_dir / "artifacts" / "final_report.json", report.model_dump())
         report.artifact_paths["final_report"] = str(report_path)
         self.run_repository.upsert_run_report(report, max_retries=max_retries, user_id=user_id)
         return report
+
+    def _build_test_plan(
+        self,
+        analysis: AnalysisResult,
+        plan: PlanResult,
+        testing_objective: str | None,
+    ) -> list[TestPlanItem]:
+        objective = testing_objective or "validate the main application workflows and generated test coverage"
+        items: list[TestPlanItem] = []
+
+        for planned_module in plan.modules[:6]:
+            items.append(
+                TestPlanItem(
+                    title=f"Positive coverage for {planned_module.module_import}",
+                    category="positive",
+                    target=planned_module.module_import,
+                    rationale=f"Confirm the module behaves under valid inputs while pursuing the objective: {objective}.",
+                )
+            )
+            items.append(
+                TestPlanItem(
+                    title=f"Invalid input handling for {planned_module.module_import}",
+                    category="negative",
+                    target=planned_module.module_import,
+                    rationale="Probe how the module reacts to malformed, missing, or unsupported values.",
+                )
+            )
+            items.append(
+                TestPlanItem(
+                    title=f"Boundary and empty-state check for {planned_module.module_import}",
+                    category="boundary",
+                    target=planned_module.module_import,
+                    rationale="Exercise empty, minimum, and maximum-like conditions without changing production logic.",
+                )
+            )
+
+        if analysis.api_endpoints:
+            for endpoint in analysis.api_endpoints[:3]:
+                items.append(
+                    TestPlanItem(
+                        title=f"API security probe for {endpoint.method} {endpoint.path}",
+                        category="security",
+                        target=f"{endpoint.method} {endpoint.path}",
+                        rationale="Add malformed input and injection-style checks where request-handling code exists.",
+                    )
+                )
+
+        if not items:
+            items.append(
+                TestPlanItem(
+                    title="Generic smoke validation",
+                    category="edge",
+                    target=analysis.repository_path,
+                    rationale=f"Use file-level smoke coverage to support the objective: {objective}.",
+                )
+            )
+
+        return items
+
+    def _build_execution_steps(
+        self,
+        repo_path: Path,
+        analysis: AnalysisResult,
+        testing_objective: str | None,
+    ) -> list[ExecutionStep]:
+        objective = testing_objective or "run exploratory QA-style checks"
+        steps = [
+            ExecutionStep(action="open_repository", value=str(repo_path)),
+            ExecutionStep(action="analyze_codebase", value=f"{len(analysis.modules)} modules detected"),
+            ExecutionStep(action="set_objective", value=objective),
+            ExecutionStep(action="generate_tests", value="unit, integration, edge, and boundary checks"),
+            ExecutionStep(action="execute_runner", value="pytest", expected="real pass/fail output"),
+        ]
+
+        if analysis.api_endpoints:
+            endpoint = analysis.api_endpoints[0]
+            steps.append(
+                ExecutionStep(
+                    action="assert",
+                    expected=f"API endpoint {endpoint.method} {endpoint.path} remains reachable and well-described",
+                )
+            )
+
+        return steps
+
+    def _build_observations(
+        self,
+        analysis: AnalysisResult,
+        execution_history: list[ExecutionResult],
+        debug_history: list[DebugResult],
+    ) -> list[Observation]:
+        observations = [
+            Observation(
+                title="Codebase scanned",
+                detail=f"Detected {len(analysis.modules)} modules across {', '.join(analysis.detected_languages) or 'unknown'} sources.",
+                status="pass",
+            )
+        ]
+
+        latest_execution = execution_history[-1] if execution_history else None
+        if latest_execution:
+            observations.append(
+                Observation(
+                    title="Latest execution",
+                    detail=(
+                        f"Runner exited with {latest_execution.status.upper()} "
+                        f"(exit {latest_execution.exit_code}, collected {latest_execution.tests_collected or 0} tests)."
+                    ),
+                    status="pass" if latest_execution.status == "passed" else "fail",
+                )
+            )
+
+        if debug_history:
+            observations.append(
+                Observation(
+                    title="Debugger insight",
+                    detail=debug_history[-1].diagnosis,
+                    status="info",
+                )
+            )
+
+        return observations
+
+    def _build_final_structured_report(
+        self,
+        execution_history: list[ExecutionResult],
+        debug_history: list[DebugResult],
+    ) -> FinalStructuredReport:
+        latest_execution = execution_history[-1] if execution_history else None
+        tests_run = latest_execution.tests_collected or 0 if latest_execution else 0
+        passed = tests_run if latest_execution and latest_execution.status == "passed" else 0
+        failed = tests_run if latest_execution and latest_execution.status != "passed" else 0
+        bugs: list[FinalBugReport] = []
+
+        latest_debug = debug_history[-1] if debug_history else None
+        if latest_debug:
+            for finding in latest_debug.findings[:5]:
+                bugs.append(
+                    FinalBugReport(
+                        issue=finding.title,
+                        severity=finding.severity,
+                        steps_to_reproduce=[
+                            "Open the run workspace",
+                            "Use the same repository and testing objective",
+                            "Launch the tester agent",
+                            f"Observe the error: {finding.error_message}",
+                        ],
+                    )
+                )
+
+        return FinalStructuredReport(
+            tests_run=tests_run,
+            passed=passed,
+            failed=failed,
+            bugs=bugs,
+        )
 
     def _estimate_coverage(
         self,

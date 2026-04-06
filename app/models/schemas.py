@@ -29,6 +29,8 @@ class OrchestrateRequest(BaseModel):
     max_retries: int = Field(default=2, ge=0, le=5)
     model: str | None = None
     upload_id: str | None = None
+    target_input: str | None = None
+    testing_objective: str | None = None
 
 
 class SignUpRequest(BaseModel):
@@ -240,6 +242,39 @@ class ImprovementReport(BaseModel):
     advanced_test_suggestions: list[str] = Field(default_factory=list)
 
 
+class TestPlanItem(BaseModel):
+    title: str
+    category: Literal["positive", "negative", "edge", "boundary", "security"]
+    target: str
+    rationale: str
+
+
+class ExecutionStep(BaseModel):
+    action: str
+    value: str | None = None
+    selector: str | None = None
+    expected: str | None = None
+
+
+class Observation(BaseModel):
+    title: str
+    detail: str
+    status: Literal["info", "pass", "fail"]
+
+
+class FinalBugReport(BaseModel):
+    issue: str
+    severity: Literal["low", "medium", "high"]
+    steps_to_reproduce: list[str] = Field(default_factory=list)
+
+
+class FinalStructuredReport(BaseModel):
+    tests_run: int = 0
+    passed: int = 0
+    failed: int = 0
+    bugs: list[FinalBugReport] = Field(default_factory=list)
+
+
 class RunReport(BaseModel):
     run_id: str
     repository_path: str
@@ -252,6 +287,12 @@ class RunReport(BaseModel):
     debug_history: list[DebugResult]
     coverage_report: CoverageReport = Field(default_factory=CoverageReport)
     improvement_report: ImprovementReport = Field(default_factory=ImprovementReport)
+    target_input: str | None = None
+    testing_objective: str | None = None
+    test_plan: list[TestPlanItem] = Field(default_factory=list)
+    execution_steps: list[ExecutionStep] = Field(default_factory=list)
+    observations: list[Observation] = Field(default_factory=list)
+    final_structured_report: FinalStructuredReport = Field(default_factory=FinalStructuredReport)
     artifact_paths: dict[str, Any]
 
 

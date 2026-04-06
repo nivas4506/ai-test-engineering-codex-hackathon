@@ -29,9 +29,17 @@ def test_orchestrator_generates_executes_and_writes_artifacts(
     assert report.coverage_report.estimated_line_coverage > 0
     assert report.improvement_report.rerun_summary
     assert report.improvement_report.ci_cd_suggestions
+    assert report.test_plan
+    assert report.execution_steps
+    assert report.observations
+    assert report.final_structured_report.tests_run >= 0
     assert (temp_run_dir / "artifacts" / "final_report.json").exists()
     assert (temp_run_dir / "artifacts" / "coverage_report.json").exists()
     assert (temp_run_dir / "artifacts" / "improvement_report.json").exists()
+    assert (temp_run_dir / "artifacts" / "test_plan.json").exists()
+    assert (temp_run_dir / "artifacts" / "execution_steps.json").exists()
+    assert (temp_run_dir / "artifacts" / "observations.json").exists()
+    assert (temp_run_dir / "artifacts" / "final_structured_report.json").exists()
     assert any(path.name == "test_math_utils.py" for path in (temp_run_dir / "generated_tests").iterdir())
 
 
