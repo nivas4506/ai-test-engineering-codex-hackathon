@@ -53,8 +53,26 @@ function readStoredMission() {
   }
 }
 
+function isWindowsAbsolutePath(value) {
+  return /^[A-Za-z]:[\\/]/.test(String(value || ""));
+}
+
+function isProductionHost() {
+  return !["localhost", "127.0.0.1"].includes(window.location.hostname);
+}
+
+function sanitizeStoredMission(stored) {
+  const next = { ...stored };
+  if (isProductionHost() && isWindowsAbsolutePath(next.repository_path)) {
+    next.repository_path = "";
+    next.upload_id = null;
+    next.run_id = null;
+  }
+  return next;
+}
+
 function writeStoredMission(partial) {
-  const nextValue = { ...readStoredMission(), ...partial };
+  const nextValue = sanitizeStoredMission({ ...readStoredMission(), ...partial });
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextValue));
 }
 
@@ -765,7 +783,10 @@ if (els.reportButton) {
 }
 
 function applyStoredMission() {
-  const stored = readStoredMission();
+  const stored = sanitizeStoredMission(readStoredMission());
+  if (JSON.stringify(stored) !== JSON.stringify(readStoredMission())) {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stored));
+  }
   if (stored.repository_path && els.repositoryPath) {
     els.repositoryPath.value = stored.repository_path;
   }
