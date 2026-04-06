@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from openai import OpenAI
@@ -12,12 +13,19 @@ from app.models.schemas import AvailableModel, ModuleSummary
 
 OPENAI_CODE_MODELS: tuple[AvailableModel, ...] = (
     AvailableModel(
+        id="automation-fast",
+        label="AI automation trio",
+        provider="openai",
+        category="balanced",
+        description="Fast automation profile that races GPT-5 mini, GPT-5 Codex, and GPT-5.1 Codex mini for the first usable test output.",
+        recommended=True,
+    ),
+    AvailableModel(
         id="gpt-5-mini",
         label="GPT-5 mini",
         provider="openai",
         category="budget",
         description="Fast and cost-efficient default for routine repository test generation.",
-        recommended=True,
     ),
     AvailableModel(
         id="gpt-5",
@@ -63,6 +71,12 @@ HEURISTIC_FALLBACK_MODEL = AvailableModel(
     category="fallback",
     description="Built-in deterministic generator used when OpenAI is unavailable.",
     recommended=False,
+)
+
+FAST_AUTOMATION_MODELS: tuple[str, ...] = (
+    "gpt-5-mini",
+    "gpt-5-codex",
+    "gpt-5.1-codex-mini",
 )
 
 
@@ -180,6 +194,26 @@ class OpenAITestWriter:
         selected_model = self.resolve_model(model_override)
         if not selected_model:
             return None
+        if selected_model == "automation-fast":
+            return self._run_fast_automation(instructions, prompt)
+        return self._run_prompt_for_model(selected_model, instructions, prompt)
+
+    def _run_fast_automation(self, instructions: str, prompt: str) -> str | None:
+        with ThreadPoolExecutor(max_workers=len(FAST_AUTOMATION_MODELS)) as executor:
+            future_map = {
+                executor.submit(self._run_prompt_for_model, model_name, instructions, prompt): model_name
+                for model_name in FAST_AUTOMATION_MODELS
+            }
+            for future in as_completed(future_map):
+                try:
+                    content = future.result()
+                except Exception:
+                    content = None
+                if content:
+                    return content
+        return None
+
+    def _run_prompt_for_model(self, selected_model: str, instructions: str, prompt: str) -> str | None:
         try:
             response = self._client.chat.completions.create(
                 model=selected_model,
@@ -191,7 +225,7 @@ class OpenAITestWriter:
                 max_completion_tokens=4000
             )
             text = response.choices[0].message.content.strip()
-        except Exception as e:
+        except Exception:
             try:
                 response = self._client.chat.completions.create(
                     model=selected_model,
@@ -202,8 +236,8 @@ class OpenAITestWriter:
                     max_completion_tokens=4000
                 )
                 text = response.choices[0].message.content.strip()
-            except Exception as e2:
-                print(f"OpenAI generation failed: {e2}")
+            except Exception as error:
+                print(f"OpenAI generation failed for {selected_model}: {error}")
                 return None
 
         if not text:

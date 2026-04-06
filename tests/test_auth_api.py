@@ -112,4 +112,5 @@ def test_google_login_then_read_available_models(monkeypatch) -> None:
     assert models_response.status_code == 200
     payload = models_response.json()
     assert any(item["id"] == "heuristic" for item in payload)
+    assert any(item["id"] == "automation-fast" for item in payload)
     assert any(item["id"] == "gpt-5-mini" for item in payload)

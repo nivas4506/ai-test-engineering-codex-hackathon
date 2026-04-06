@@ -6,6 +6,20 @@ function escapeHtml(value) {
   return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+function getModelLabel(modelId) {
+  const labels = {
+    "automation-fast": "AI automation trio",
+    "gpt-5-mini": "GPT-5 mini",
+    "gpt-5": "GPT-5",
+    "gpt-5.1": "GPT-5.1",
+    "gpt-5-codex": "GPT-5 Codex",
+    "gpt-5.1-codex": "GPT-5.1 Codex",
+    "gpt-5.1-codex-mini": "GPT-5.1 Codex mini",
+    heuristic: "Heuristic fallback",
+  };
+  return labels[modelId] || modelId || "Heuristic fallback";
+}
+
 function statusTone(status) {
   return status === "passed" ? "tone-good" : "tone-alert";
 }
@@ -44,7 +58,7 @@ function renderReportDetail(report) {
       </div>
       <div class="detail-stat">
         <span>AI model</span>
-        <strong>${latestGeneration?.provider === "openai" ? latestGeneration?.model ?? "gpt-5-mini" : "Heuristic fallback"}</strong>
+        <strong>${latestGeneration?.provider === "openai" ? getModelLabel(latestGeneration?.model ?? "automation-fast") : "Heuristic fallback"}</strong>
       </div>
     </div>
     <div class="report-detail-grid">

@@ -15,7 +15,7 @@ UPLOADS_DIR = WORKSPACE_ROOT / "uploads"
 WORKSPACE_ROOT.mkdir(parents=True, exist_ok=True)
 DEFAULT_MAX_RETRIES = 2
 DEFAULT_TEST_TIMEOUT_SECONDS = 60
-DEFAULT_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5-mini")
+DEFAULT_OPENAI_MODEL = os.getenv("OPENAI_MODEL", "automation-fast")
 OPENAI_REASONING_EFFORT = os.getenv("OPENAI_REASONING_EFFORT", "low")
 ACCESS_TOKEN_EXPIRE_HOURS = int(os.getenv("ACCESS_TOKEN_EXPIRE_HOURS", "24"))
 AUTH_COOKIE_NAME = os.getenv("AUTH_COOKIE_NAME", "ai_test_engineering_token")

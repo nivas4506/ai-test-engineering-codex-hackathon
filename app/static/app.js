@@ -60,6 +60,20 @@ function escapeHtml(value) {
   return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }
 
+function getModelLabel(modelId) {
+  const labels = {
+    "automation-fast": "AI automation trio",
+    "gpt-5-mini": "GPT-5 mini",
+    "gpt-5": "GPT-5",
+    "gpt-5.1": "GPT-5.1",
+    "gpt-5-codex": "GPT-5 Codex",
+    "gpt-5.1-codex": "GPT-5.1 Codex",
+    "gpt-5.1-codex-mini": "GPT-5.1 Codex mini",
+    heuristic: "Heuristic fallback",
+  };
+  return labels[modelId] || modelId || "Heuristic fallback";
+}
+
 function setStatus(text, variant = "") {
   const normalizedVariant = String(variant || "").toLowerCase();
   const loweredText = String(text || "").toLowerCase();
@@ -144,7 +158,7 @@ async function ensureSamplePath() {
 
 function getModelDisplay(provider, model) {
   if (provider === "openai") {
-    return model || "gpt-5-mini";
+    return getModelLabel(model || "automation-fast");
   }
   return "Heuristic fallback";
 }
@@ -605,13 +619,13 @@ async function loadSystemStatus() {
     Object.assign(systemState, data);
 
     if (els.modelChip) {
-      els.modelChip.textContent = data.ai_provider === "openai" ? `OpenAI ${data.ai_model}` : "Heuristic fallback mode";
+      els.modelChip.textContent = data.ai_provider === "openai" ? `OpenAI ${getModelLabel(data.ai_model)}` : "Heuristic fallback mode";
     }
 
     if (els.modelHint) {
       els.modelHint.textContent =
         data.ai_provider === "openai"
-          ? `Tester agent generation is active with ${data.ai_model} (${data.reasoning_effort} reasoning).`
+          ? `Tester agent generation is active with ${getModelLabel(data.ai_model)} (${data.reasoning_effort} reasoning).`
           : "OpenAI key not configured. The tester agent is using the built-in heuristic generator.";
     }
   } catch (error) {
