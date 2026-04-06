@@ -184,33 +184,52 @@ function setTimeline(report) {
 function setSummary(report) {
   const generated = report.generation_history.at(-1);
   const execution = report.execution_history.at(-1);
-  const moduleCount = report.analysis.modules.length;
-  const functionCount = report.analysis.modules.reduce((count, module) => count + module.functions.length, 0);
+  const moduleCount = report.analysis.summary?.total_modules ?? report.analysis.modules.length;
+  const functionCount = report.analysis.summary?.total_functions ?? report.analysis.modules.reduce((count, module) => count + module.functions.length, 0);
+  const classCount = report.analysis.summary?.total_classes ?? report.analysis.modules.reduce((count, module) => count + (module.class_names?.length || 0), 0);
+  const endpointCount = report.analysis.summary?.total_api_endpoints ?? (report.analysis.api_endpoints?.length || 0);
+  const latestDebug = report.debug_history.at(-1);
+  const topFinding = latestDebug?.findings?.[0];
+  const topFix = latestDebug?.fix_suggestions?.[0];
   const nextMove = report.status === "passed"
     ? "Agent finished successfully. Review logs and export the report."
     : report.debug_history.at(-1)?.diagnosis || "Agent stopped after the latest execution error.";
   const cards = [
     {
-      label: "Mission",
-      value: "Inspect repository and produce a runnable testing verdict.",
+      label: "Codebase Summary",
+      value: `${moduleCount} modules | ${functionCount} functions | ${classCount} classes | ${endpointCount} endpoints`,
     },
     {
-      label: "Project Shape",
-      value: `${report.analysis.detected_languages.join(", ") || "unknown"} | ${moduleCount} modules | ${functionCount} functions`,
+      label: "Dependency Map",
+      value: `${report.analysis.dependency_map?.length || 0} internal links mapped across ${report.analysis.detected_languages.join(", ") || "unknown"} sources`,
     },
     {
-      label: "Strategy",
-      value: report.plan.summary,
+      label: "Generated Tests",
+      value: generated
+        ? `${generated.generated_files.length} files created. ${generated.summary}`
+        : "No generation record available.",
     },
     {
-      label: "Generation",
-      value: generated ? generated.summary : "No generation record available.",
-    },
-    {
-      label: "Execution",
+      label: "Execution Report",
       value: execution
-        ? `${execution.status.toUpperCase()} with exit code ${execution.exit_code} and ${execution.tests_collected ?? "n/a"} collected tests.`
+        ? `${execution.status.toUpperCase()} with exit code ${execution.exit_code}, ${execution.tests_collected ?? "n/a"} collected tests, ${execution.duration_seconds.toFixed(2)}s runtime.`
         : "No execution record available.",
+    },
+    {
+      label: "Bug Report",
+      value: topFinding
+        ? `${topFinding.severity.toUpperCase()}: ${topFinding.title}. ${topFinding.root_cause}`
+        : "No blocking bug was reported after the latest execution.",
+    },
+    {
+      label: "Fix Suggestion",
+      value: topFix ? `${topFix.title}: ${topFix.summary}` : nextMove,
+    },
+    {
+      label: "Coverage Estimate",
+      value: report.coverage_report
+        ? `${report.coverage_report.estimated_line_coverage}% estimated line coverage with ${report.coverage_report.missing_edge_cases.length} known gaps`
+        : "Coverage estimate unavailable.",
     },
     {
       label: "Next Move",

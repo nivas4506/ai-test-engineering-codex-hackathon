@@ -14,6 +14,11 @@ function renderReportDetail(report) {
   const latestExecution = report.execution_history.at(-1);
   const latestGeneration = report.generation_history.at(-1);
   const latestDebug = report.debug_history.at(-1);
+  const topFinding = latestDebug?.findings?.[0];
+  const topFix = latestDebug?.fix_suggestions?.[0];
+  const dependencyCount = report.analysis.dependency_map?.length || 0;
+  const endpointCount = report.analysis.api_endpoints?.length || 0;
+  const coverage = report.coverage_report;
 
   reportDetail.innerHTML = `
     <div class="detail-hero">
@@ -42,28 +47,81 @@ function renderReportDetail(report) {
       </div>
     </div>
     <div class="detail-section">
-      <div class="detail-label">Project folder</div>
-      <pre>${escapeHtml(report.repository_path)}</pre>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">What the app understood</div>
-      <pre>${escapeHtml(report.plan.summary)}</pre>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Problem found</div>
-      <pre>${escapeHtml(latestDebug?.diagnosis || "No extra problem was found after the last run.")}</pre>
-    </div>
-    <div class="detail-section">
-      <div class="detail-label">Run facts</div>
+      <div class="detail-label">Codebase summary</div>
       <pre>${escapeHtml(
         [
-          `Exit code: ${latestExecution?.exit_code ?? "n/a"}`,
-          `Time taken: ${latestExecution?.duration_seconds?.toFixed(2) ?? "n/a"}s`,
-          `Output lines: ${latestExecution?.stdout?.split("\\n").filter(Boolean).length ?? 0}`,
-          `Error lines: ${latestExecution?.stderr?.split("\\n").filter(Boolean).length ?? 0}`,
-          `AI provider: ${latestGeneration?.provider ?? "n/a"}`,
-          `AI model: ${latestGeneration?.model ?? "heuristic fallback"}`,
+          `Project folder: ${report.repository_path}`,
+          `Detected languages: ${report.analysis.detected_languages.join(", ") || "unknown"}`,
+          `Modules: ${report.analysis.summary?.total_modules ?? report.analysis.modules.length}`,
+          `Functions: ${report.analysis.summary?.total_functions ?? 0}`,
+          `Classes: ${report.analysis.summary?.total_classes ?? 0}`,
+          `API endpoints: ${endpointCount}`,
+          `Dependency links: ${dependencyCount}`,
         ].join("\n"),
+      )}</pre>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Generated test files</div>
+      <pre>${escapeHtml(
+        (latestGeneration?.generated_files || [])
+          .map((file) => `${file.file_path} -> ${file.strategy}`)
+          .join("\n") || "No generated test files recorded.",
+      )}</pre>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Test execution report</div>
+      <pre>${escapeHtml(
+        [
+          `Planner summary: ${report.plan.summary}`,
+          `Execution status: ${latestExecution?.status ?? "n/a"}`,
+          `Exit code: ${latestExecution?.exit_code ?? "n/a"}`,
+          `Duration: ${latestExecution?.duration_seconds?.toFixed(2) ?? "n/a"}s`,
+          `Collected tests: ${latestExecution?.tests_collected ?? "n/a"}`,
+        ].join("\n"),
+      )}</pre>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Bug report</div>
+      <pre>${escapeHtml(
+        topFinding
+          ? [
+              `Title: ${topFinding.title}`,
+              `Severity: ${topFinding.severity}`,
+              `Error: ${topFinding.error_message}`,
+              `Root cause: ${topFinding.root_cause}`,
+              `Location: ${topFinding.file_path || "n/a"}${topFinding.line_number ? `:${topFinding.line_number}` : ""}`,
+            ].join("\n")
+          : latestDebug?.diagnosis || "No extra problem was found after the last run.",
+      )}</pre>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Fix suggestion</div>
+      <pre>${escapeHtml(
+        topFix
+          ? [
+              `Title: ${topFix.title}`,
+              `Summary: ${topFix.summary}`,
+              `Location: ${topFix.file_path || "n/a"}${topFix.line_number ? `:${topFix.line_number}` : ""}`,
+              "",
+              topFix.patch,
+            ].join("\n")
+          : "No fix suggestion was needed after the latest run.",
+      )}</pre>
+    </div>
+    <div class="detail-section">
+      <div class="detail-label">Coverage report</div>
+      <pre>${escapeHtml(
+        coverage
+          ? [
+              `Estimated line coverage: ${coverage.estimated_line_coverage}%`,
+              `Covered areas:`,
+              ...coverage.covered_areas.map((item) => `- ${item}`),
+              `Missing edge cases:`,
+              ...coverage.missing_edge_cases.map((item) => `- ${item}`),
+              `Suggested additional tests:`,
+              ...coverage.suggested_additional_tests.map((item) => `- ${item}`),
+            ].join("\n")
+          : "Coverage estimate unavailable.",
       )}</pre>
     </div>
   `;

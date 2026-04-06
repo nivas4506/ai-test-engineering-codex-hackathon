@@ -69,11 +69,36 @@ class ModuleFunction(BaseModel):
     inferred_cases: list[FunctionCase] = Field(default_factory=list)
 
 
+class DependencyLink(BaseModel):
+    source_module: str
+    target_module: str
+    relation: str = "imports"
+
+
+class ApiEndpoint(BaseModel):
+    method: str
+    path: str
+    handler: str
+    file_path: str
+    line_number: int
+
+
+class CodebaseSummary(BaseModel):
+    total_files: int = 0
+    total_modules: int = 0
+    total_functions: int = 0
+    total_classes: int = 0
+    total_api_endpoints: int = 0
+    detected_languages: list[str] = Field(default_factory=list)
+
+
 class ModuleSummary(BaseModel):
     file_path: str
     module_import: str
     language: Literal["python", "javascript", "typescript", "generic"]
     functions: list[ModuleFunction] = Field(default_factory=list)
+    class_names: list[str] = Field(default_factory=list)
+    imports: list[str] = Field(default_factory=list)
 
 
 class AnalysisResult(BaseModel):
@@ -84,6 +109,9 @@ class AnalysisResult(BaseModel):
     generic_files: list[str] = Field(default_factory=list)
     detected_languages: list[Literal["python", "javascript", "typescript", "generic"]] = Field(default_factory=list)
     modules: list[ModuleSummary]
+    dependency_map: list[DependencyLink] = Field(default_factory=list)
+    api_endpoints: list[ApiEndpoint] = Field(default_factory=list)
+    summary: CodebaseSummary = Field(default_factory=CodebaseSummary)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
@@ -173,10 +201,36 @@ class DebugAction(BaseModel):
     detail: str
 
 
+class BugFinding(BaseModel):
+    title: str
+    error_message: str
+    root_cause: str
+    file_path: str | None = None
+    line_number: int | None = None
+    severity: Literal["low", "medium", "high"] = "medium"
+
+
+class FixSuggestion(BaseModel):
+    title: str
+    summary: str
+    patch: str
+    file_path: str | None = None
+    line_number: int | None = None
+
+
 class DebugResult(BaseModel):
     diagnosis: str
     actions: list[DebugAction]
     next_generation_mode: Literal["balanced", "safe"]
+    findings: list[BugFinding] = Field(default_factory=list)
+    fix_suggestions: list[FixSuggestion] = Field(default_factory=list)
+
+
+class CoverageReport(BaseModel):
+    estimated_line_coverage: int = 0
+    covered_areas: list[str] = Field(default_factory=list)
+    missing_edge_cases: list[str] = Field(default_factory=list)
+    suggested_additional_tests: list[str] = Field(default_factory=list)
 
 
 class RunReport(BaseModel):
@@ -189,6 +243,7 @@ class RunReport(BaseModel):
     generation_history: list[GenerationResult]
     execution_history: list[ExecutionResult]
     debug_history: list[DebugResult]
+    coverage_report: CoverageReport = Field(default_factory=CoverageReport)
     artifact_paths: dict[str, Any]
 
 
