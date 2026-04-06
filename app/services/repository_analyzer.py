@@ -12,6 +12,7 @@ class RepositoryAnalyzer:
     PYTHON_SUFFIXES = {".py"}
     JAVASCRIPT_SUFFIXES = {".js", ".cjs", ".mjs", ".jsx"}
     TYPESCRIPT_SUFFIXES = {".ts", ".tsx"}
+    GENERIC_SUFFIXES = ALLOWED_CODE_SUFFIXES - PYTHON_SUFFIXES - JAVASCRIPT_SUFFIXES - TYPESCRIPT_SUFFIXES
 
     def analyze(self, repository_path: str) -> AnalysisResult:
         repo_path = Path(repository_path).resolve()
@@ -20,12 +21,8 @@ class RepositoryAnalyzer:
 
         if repo_path.is_file():
             if not self._is_supported_source(repo_path):
-                if repo_path.suffix.lower() in ALLOWED_CODE_SUFFIXES:
-                    raise ValueError(
-                        "Source code was uploaded successfully, but automated test generation currently supports Python, JavaScript, and TypeScript projects only."
-                    )
                 raise ValueError(
-                    "No supported source files were found. Upload Python, JavaScript, or TypeScript source files to generate tests."
+                    "No supported source files were found. Upload source-code files from a programming language."
                 )
             modules = [self._summarize_file(repo_path.parent, repo_path)]
         else:
@@ -38,6 +35,7 @@ class RepositoryAnalyzer:
         python_files = [module.file_path for module in modules if module.language == "python"]
         javascript_files = [module.file_path for module in modules if module.language == "javascript"]
         typescript_files = [module.file_path for module in modules if module.language == "typescript"]
+        generic_files = [module.file_path for module in modules if module.language == "generic"]
 
         detected_languages = []
         if python_files:
@@ -46,19 +44,12 @@ class RepositoryAnalyzer:
             detected_languages.append("javascript")
         if typescript_files:
             detected_languages.append("typescript")
+        if generic_files:
+            detected_languages.append("generic")
 
         if not modules:
-            unsupported_code_files = [
-                str(file_path)
-                for file_path in sorted(repo_path.rglob("*"))
-                if file_path.is_file() and file_path.suffix.lower() in ALLOWED_CODE_SUFFIXES and not self._should_skip(file_path)
-            ]
-            if unsupported_code_files:
-                raise ValueError(
-                    "Source code was uploaded successfully, but automated test generation currently supports Python, JavaScript, and TypeScript projects only."
-                )
             raise ValueError(
-                "No supported source files were found. Upload Python, JavaScript, or TypeScript source files to generate tests."
+                "No supported source files were found. Upload source-code files from a programming language."
             )
 
         return AnalysisResult(
@@ -66,6 +57,7 @@ class RepositoryAnalyzer:
             python_files=python_files,
             javascript_files=javascript_files,
             typescript_files=typescript_files,
+            generic_files=generic_files,
             detected_languages=detected_languages,
             modules=modules,
         )
@@ -76,7 +68,9 @@ class RepositoryAnalyzer:
             return self._summarize_python_module(repo_path, file_path)
         if suffix in self.TYPESCRIPT_SUFFIXES:
             return self._summarize_script_module(repo_path, file_path, "typescript")
-        return self._summarize_script_module(repo_path, file_path, "javascript")
+        if suffix in self.JAVASCRIPT_SUFFIXES:
+            return self._summarize_script_module(repo_path, file_path, "javascript")
+        return self._summarize_generic_module(repo_path, file_path)
 
     def _summarize_python_module(self, repo_path: Path, file_path: Path) -> ModuleSummary:
         source = file_path.read_text(encoding="utf-8")
@@ -115,6 +109,15 @@ class RepositoryAnalyzer:
             module_import=relative,
             language=language,
             functions=functions,
+        )
+
+    def _summarize_generic_module(self, repo_path: Path, file_path: Path) -> ModuleSummary:
+        relative = file_path.relative_to(repo_path).as_posix()
+        return ModuleSummary(
+            file_path=str(file_path),
+            module_import=relative,
+            language="generic",
+            functions=[],
         )
 
     def _extract_script_functions(self, source: str) -> list[ModuleFunction]:
@@ -175,7 +178,7 @@ class RepositoryAnalyzer:
 
     def _is_supported_source(self, file_path: Path) -> bool:
         suffix = file_path.suffix.lower()
-        return suffix in self.PYTHON_SUFFIXES | self.JAVASCRIPT_SUFFIXES | self.TYPESCRIPT_SUFFIXES
+        return suffix in ALLOWED_CODE_SUFFIXES
 
     def _should_skip(self, file_path: Path) -> bool:
         parts = set(file_path.parts)

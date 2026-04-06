@@ -72,7 +72,7 @@ class ModuleFunction(BaseModel):
 class ModuleSummary(BaseModel):
     file_path: str
     module_import: str
-    language: Literal["python", "javascript", "typescript"]
+    language: Literal["python", "javascript", "typescript", "generic"]
     functions: list[ModuleFunction] = Field(default_factory=list)
 
 
@@ -81,7 +81,8 @@ class AnalysisResult(BaseModel):
     python_files: list[str]
     javascript_files: list[str] = Field(default_factory=list)
     typescript_files: list[str] = Field(default_factory=list)
-    detected_languages: list[Literal["python", "javascript", "typescript"]] = Field(default_factory=list)
+    generic_files: list[str] = Field(default_factory=list)
+    detected_languages: list[Literal["python", "javascript", "typescript", "generic"]] = Field(default_factory=list)
     modules: list[ModuleSummary]
     created_at: datetime = Field(default_factory=datetime.utcnow)
 

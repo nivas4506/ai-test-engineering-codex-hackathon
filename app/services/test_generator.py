@@ -68,23 +68,17 @@ class TestGeneratorService:
 
     def _target_path_for_module(self, generated_dir: Path, module: ModuleSummary) -> Path:
         slug = module.module_import.replace(".", "_").replace("/", "_").replace("\\", "_")
-        if module.language == "python":
-            return generated_dir / f"test_{slug}.py"
-        if module.language == "typescript":
-            return generated_dir / f"{slug}.test.ts"
-        return generated_dir / f"{slug}.test.cjs"
+        return generated_dir / f"test_{slug}.py"
 
     def _build_test_for_module(self, module: ModuleSummary, mode: str, repo_path: Path, model: str | None = None) -> str:
-        if self.openai_writer.enabled:
+        if self.openai_writer.enabled and module.language == "python":
             generated = self.openai_writer.generate_module_test(module, mode, repo_path, model)
             if generated and self._looks_like_test_module(generated, module.language):
                 return generated
 
         if module.language == "python":
             return self._build_python_test_module(module.module_import, module.functions, mode)
-        if module.language == "typescript":
-            return self._build_typescript_test_module(module, mode)
-        return self._build_javascript_test_module(module, mode)
+        return self._build_source_smoke_test_module(module, mode)
 
     def _build_python_test_module(self, module_import: str, functions: list, mode: str) -> str:
         lines = [
@@ -165,132 +159,57 @@ class TestGeneratorService:
 
         return "\n".join(lines) + "\n"
 
-    def _build_javascript_test_module(self, module: ModuleSummary, mode: str) -> str:
+    def _build_source_smoke_test_module(self, module: ModuleSummary, mode: str) -> str:
         source_path = json.dumps(str(Path(module.file_path).resolve()))
-        zero_arg_functions = [fn.name for fn in module.functions if fn.required_arg_count == 0]
+        source_name = Path(module.file_path).name
         lines = [
-            "const test = require('node:test');",
-            "const assert = require('node:assert/strict');",
-            "const { pathToFileURL } = require('node:url');",
+            "from pathlib import Path",
+            "import re",
             "",
-            f"const SOURCE_PATH = {source_path};",
+            f"SOURCE_PATH = Path({source_path})",
+            f"EXPECTED_SUFFIX = {json.dumps(Path(module.file_path).suffix)}",
             "",
-            "async function loadModule() {",
-            "  return import(pathToFileURL(SOURCE_PATH).href);",
-            "}",
             "",
-            "function getExport(moduleNamespace, name) {",
-            "  if (moduleNamespace && Object.prototype.hasOwnProperty.call(moduleNamespace, name)) {",
-            "    return moduleNamespace[name];",
-            "  }",
-            "  if (moduleNamespace?.default && Object.prototype.hasOwnProperty.call(moduleNamespace.default, name)) {",
-            "    return moduleNamespace.default[name];",
-            "  }",
-            "  return undefined;",
-            "}",
+            "def test_source_file_exists():",
+            "    assert SOURCE_PATH.exists()",
+            "    assert SOURCE_PATH.is_file()",
             "",
-            "test('module loads', async () => {",
-            "  const moduleNamespace = await loadModule();",
-            "  assert.ok(moduleNamespace);",
-            "});",
+            "",
+            "def test_source_file_is_not_empty():",
+            "    content = SOURCE_PATH.read_text(encoding='utf-8', errors='ignore')",
+            "    assert content.strip()",
+            "",
+            "",
+            "def test_source_file_suffix_matches_expected():",
+            "    assert SOURCE_PATH.suffix == EXPECTED_SUFFIX",
         ]
 
         for function in module.functions:
             lines.extend(
                 [
                     "",
-                    f"test('exports {function.name}', async () => {{",
-                    "  const moduleNamespace = await loadModule();",
-                    f"  const exported = getExport(moduleNamespace, '{function.name}');",
-                    "  assert.equal(typeof exported, 'function');",
-                    "});",
+                    f"def test_source_mentions_{function.name}():",
+                    "    content = SOURCE_PATH.read_text(encoding='utf-8', errors='ignore')",
+                    f"    assert re.search(r'\\b{function.name}\\b', content)",
                 ]
             )
 
         if mode == "balanced":
-            for function_name in zero_arg_functions:
-                lines.extend(
-                    [
-                        "",
-                        f"test('executes {function_name} without arguments', async () => {{",
-                        "  const moduleNamespace = await loadModule();",
-                        f"  const exported = getExport(moduleNamespace, '{function_name}');",
-                        "  assert.equal(typeof exported, 'function');",
-                        "  await Promise.resolve(exported());",
-                        "});",
-                    ]
-                )
-
-        return "\n".join(lines) + "\n"
-
-    def _build_typescript_test_module(self, module: ModuleSummary, mode: str) -> str:
-        source_path = json.dumps(str(Path(module.file_path).resolve())).replace("\\\\", "/")
-        zero_arg_functions = [fn.name for fn in module.functions if fn.required_arg_count == 0]
-        lines = [
-            "import test from 'node:test';",
-            "import assert from 'node:assert/strict';",
-            "import { pathToFileURL } from 'node:url';",
-            "",
-            f"const SOURCE_PATH = {source_path};",
-            "",
-            "async function loadModule() {",
-            "  return import(pathToFileURL(SOURCE_PATH).href);",
-            "}",
-            "",
-            "function getExport(moduleNamespace: Record<string, unknown>, name: string) {",
-            "  if (name in moduleNamespace) {",
-            "    return moduleNamespace[name];",
-            "  }",
-            "  const defaultExport = moduleNamespace.default as Record<string, unknown> | undefined;",
-            "  if (defaultExport && name in defaultExport) {",
-            "    return defaultExport[name];",
-            "  }",
-            "  return undefined;",
-            "}",
-            "",
-            "test('module loads', async () => {",
-            "  const moduleNamespace = await loadModule();",
-            "  assert.ok(moduleNamespace);",
-            "});",
-        ]
-
-        for function in module.functions:
             lines.extend(
                 [
                     "",
-                    f"test('exports {function.name}', async () => {{",
-                    "  const moduleNamespace = await loadModule();",
-                    f"  const exported = getExport(moduleNamespace as Record<string, unknown>, '{function.name}');",
-                    "  assert.equal(typeof exported, 'function');",
-                    "});",
+                    "",
+                    "def test_source_path_is_stable():",
+                    f"    assert SOURCE_PATH.name == {json.dumps(source_name)}",
                 ]
             )
-
-        if mode == "balanced":
-            for function_name in zero_arg_functions:
-                lines.extend(
-                    [
-                        "",
-                        f"test('executes {function_name} without arguments', async () => {{",
-                        "  const moduleNamespace = await loadModule();",
-                        f"  const exported = getExport(moduleNamespace as Record<string, unknown>, '{function_name}') as (() => unknown) | undefined;",
-                        "  assert.equal(typeof exported, 'function');",
-                        "  await Promise.resolve(exported && exported());",
-                        "});",
-                    ]
-                )
 
         return "\n".join(lines) + "\n"
 
     def _looks_like_test_module(self, content: str, language: str) -> bool:
-        if language == "python":
+        if language in {"python", "javascript", "typescript", "generic"}:
             try:
                 ast.parse(content)
             except SyntaxError:
                 return False
             return "def test_" in content
-
-        if language == "typescript":
-            return "test(" in content and "SOURCE_PATH" in content
-
-        return "test(" in content and "SOURCE_PATH" in content

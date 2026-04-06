@@ -22,6 +22,12 @@ class PlannerService:
                 strategy.append("zero-argument execution smoke test")
             if module.language in {"javascript", "typescript"}:
                 strategy.append("node-compatible module load test")
+            if module.language == "generic":
+                strategy = [
+                    "source file existence test",
+                    "readability smoke test",
+                    "non-empty file assertion",
+                ]
 
             planned_modules.append(
                 PlannedModule(
@@ -29,7 +35,11 @@ class PlannerService:
                     file_path=module.file_path,
                     priority=priority,
                     strategy=strategy,
-                    rationale=f"{module.language.title()} module exposes {function_count} public top-level functions.",
+                    rationale=(
+                        f"{module.language.title()} module exposes {function_count} public top-level functions."
+                        if module.language != "generic"
+                        else "Generic source file is validated through smoke tests without changing the codebase."
+                    ),
                 )
             )
 

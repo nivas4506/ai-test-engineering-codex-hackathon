@@ -35,13 +35,17 @@ def test_upload_accepts_bundle_with_go_files() -> None:
     assert (repository_path / "pkg" / "util.go").exists()
 
 
-def test_analyzer_explains_unsupported_language(tmp_path: Path) -> None:
+def test_analyzer_accepts_generic_language_files(tmp_path: Path) -> None:
     repository = tmp_path / "java-repo"
     repository.mkdir()
     (repository / "App.java").write_text("public class App {}", encoding="utf-8")
 
-    with pytest.raises(ValueError, match="currently supports Python, JavaScript, and TypeScript projects only"):
-        RepositoryAnalyzer().analyze(str(repository))
+    analysis = RepositoryAnalyzer().analyze(str(repository))
+
+    assert analysis.detected_languages == ["generic"]
+    assert analysis.generic_files == [str(repository / "App.java")]
+    assert len(analysis.modules) == 1
+    assert analysis.modules[0].language == "generic"
 
 
 def test_uploaded_repository_is_restored_when_temp_path_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:
