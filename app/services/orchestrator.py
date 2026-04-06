@@ -34,7 +34,13 @@ class OrchestratorService:
     def plan(self, analysis: AnalysisResult) -> PlanResult:
         return self.planner.create_plan(analysis)
 
-    def orchestrate(self, repository_path: str, max_retries: int, user_id: int | None = None) -> RunReport:
+    def orchestrate(
+        self,
+        repository_path: str,
+        max_retries: int,
+        user_id: int | None = None,
+        model: str | None = None,
+    ) -> RunReport:
         run_id, run_dir = create_run_directory()
         repo_path = Path(repository_path).resolve()
         snapshot_repository_metadata(repo_path, run_dir)
@@ -49,7 +55,7 @@ class OrchestratorService:
         final_status = "failed"
 
         for attempt in range(max_retries + 1):
-            generation = self.generator.generate(str(repo_path), run_dir, analysis, plan, mode=generation_mode)
+            generation = self.generator.generate(str(repo_path), run_dir, analysis, plan, mode=generation_mode, model=model)
             generation_history.append(generation)
             execution = self.executor.run(str(repo_path), run_dir)
             execution_history.append(execution)

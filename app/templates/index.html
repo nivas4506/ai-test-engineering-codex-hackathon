@@ -82,7 +82,7 @@
             <div class="upload-card">
               <div class="upload-copy">
                 <div class="section-kicker">Upload</div>
-                <p class="body-copy">Upload a repository folder, a supported archive, or a single source file. The extracted path will be filled in automatically.</p>
+                <p class="body-copy">Upload a repository folder, an archive, or source files from most programming languages. Python, JavaScript, and TypeScript run end-to-end today.</p>
               </div>
               <div class="upload-actions">
                 <div class="upload-picker">
@@ -96,6 +96,12 @@
             <label>
               Max retries
               <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />
+            </label>
+            <label>
+              AI test model
+              <select id="model_name" name="model_name">
+                <option value="">Loading models...</option>
+              </select>
             </label>
             <div class="actions">
               <button class="button" id="run-button" type="submit">Run test flow</button>

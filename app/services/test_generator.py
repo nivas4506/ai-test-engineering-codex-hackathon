@@ -20,12 +20,13 @@ class TestGeneratorService:
         analysis: AnalysisResult,
         plan: PlanResult,
         mode: str = "balanced",
+        model: str | None = None,
     ) -> GenerationResult:
         generated_dir = reset_generated_tests_dir(run_dir)
         repo_path = Path(repository_path).resolve()
         files: list[GeneratedFile] = []
         provider = self.openai_writer.provider_name
-        model = self.openai_writer.model if self.openai_writer.enabled else None
+        selected_model = self.openai_writer.resolve_model(model) if self.openai_writer.enabled else None
 
         if "python" in analysis.detected_languages:
             files.append(self._write_python_conftest(generated_dir, repo_path))
@@ -35,7 +36,7 @@ class TestGeneratorService:
                 continue
 
             target_path = self._target_path_for_module(generated_dir, module)
-            test_content = self._build_test_for_module(module, mode, repo_path)
+            test_content = self._build_test_for_module(module, mode, repo_path, selected_model)
             target_path.write_text(test_content, encoding="utf-8")
             files.append(
                 GeneratedFile(
@@ -49,7 +50,7 @@ class TestGeneratorService:
             generated_files=files,
             mode="safe" if mode == "safe" else "balanced",
             provider=provider,
-            model=model,
+            model=selected_model,
             summary=f"Generated {len(files)} test files in {mode} mode using {provider} generation for {language_summary} sources.",
         )
 
@@ -73,9 +74,9 @@ class TestGeneratorService:
             return generated_dir / f"{slug}.test.ts"
         return generated_dir / f"{slug}.test.cjs"
 
-    def _build_test_for_module(self, module: ModuleSummary, mode: str, repo_path: Path) -> str:
+    def _build_test_for_module(self, module: ModuleSummary, mode: str, repo_path: Path, model: str | None = None) -> str:
         if self.openai_writer.enabled:
-            generated = self.openai_writer.generate_module_test(module, mode, repo_path)
+            generated = self.openai_writer.generate_module_test(module, mode, repo_path, model)
             if generated and self._looks_like_test_module(generated, module.language):
                 return generated
 

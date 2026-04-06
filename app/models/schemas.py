@@ -13,6 +13,7 @@ class AnalyzeRequest(BaseModel):
 class GenerateTestsRequest(BaseModel):
     repository_path: str
     run_id: str | None = None
+    model: str | None = None
 
 
 class RunTestsRequest(BaseModel):
@@ -23,6 +24,7 @@ class RunTestsRequest(BaseModel):
 class OrchestrateRequest(BaseModel):
     repository_path: str
     max_retries: int = Field(default=2, ge=0, le=5)
+    model: str | None = None
 
 
 class SignUpRequest(BaseModel):
@@ -111,6 +113,16 @@ class SystemStatusResponse(BaseModel):
     ai_model: str | None = None
     openai_configured: bool
     reasoning_effort: str | None = None
+
+
+class AvailableModel(BaseModel):
+    id: str
+    label: str
+    provider: Literal["openai", "heuristic"]
+    category: Literal["balanced", "budget", "coding", "fallback"]
+    description: str
+    available: bool = True
+    recommended: bool = False
 
 
 class GoogleAuthConfigResponse(BaseModel):

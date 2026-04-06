@@ -13,7 +13,60 @@ from app.core.config import UPLOADS_DIR, WORKSPACE_DIR
 from app.models.schemas import RunListItem
 
 
-SUPPORTED_SOURCE_SUFFIXES = {".py", ".js", ".cjs", ".mjs", ".jsx", ".ts", ".tsx"}
+TESTABLE_SOURCE_SUFFIXES = {".py", ".js", ".cjs", ".mjs", ".jsx", ".ts", ".tsx"}
+ALLOWED_CODE_SUFFIXES = TESTABLE_SOURCE_SUFFIXES | {
+    ".java",
+    ".kt",
+    ".kts",
+    ".go",
+    ".rs",
+    ".php",
+    ".rb",
+    ".swift",
+    ".scala",
+    ".cs",
+    ".fs",
+    ".fsi",
+    ".fsx",
+    ".vb",
+    ".c",
+    ".h",
+    ".cpp",
+    ".cc",
+    ".cxx",
+    ".hpp",
+    ".hh",
+    ".m",
+    ".mm",
+    ".lua",
+    ".r",
+    ".dart",
+    ".ex",
+    ".exs",
+    ".erl",
+    ".hrl",
+    ".clj",
+    ".cljs",
+    ".groovy",
+    ".gvy",
+    ".pl",
+    ".pm",
+    ".jl",
+    ".nim",
+    ".zig",
+    ".ml",
+    ".mli",
+    ".sol",
+    ".sql",
+    ".sh",
+    ".bash",
+    ".zsh",
+    ".ps1",
+    ".psm1",
+    ".psd1",
+    ".bat",
+    ".cmd",
+}
 UNSUPPORTED_ARCHIVE_SUFFIXES = {".rar", ".7z", ".bz2", ".xz"}
 
 
@@ -175,17 +228,17 @@ def _safe_relative_path(raw_path: str) -> Path:
 
 def _validate_uploaded_repository(path: Path) -> None:
     if path.is_file():
-        if path.suffix.lower() not in SUPPORTED_SOURCE_SUFFIXES:
+        if path.suffix.lower() not in ALLOWED_CODE_SUFFIXES:
             raise ValueError(
-                "Uploaded file is not a supported source file. Use Python, JavaScript, or TypeScript files, or upload a supported archive."
+                "Uploaded file is not recognized as source code. Upload a code file, project folder, or supported archive."
             )
         return
 
     if not path.exists() or not path.is_dir():
         raise ValueError("Uploaded content could not be prepared as a repository.")
 
-    has_supported_files = any(file_path.suffix.lower() in SUPPORTED_SOURCE_SUFFIXES for file_path in path.rglob("*") if file_path.is_file())
-    if not has_supported_files:
+    has_code_files = any(file_path.suffix.lower() in ALLOWED_CODE_SUFFIXES for file_path in path.rglob("*") if file_path.is_file())
+    if not has_code_files:
         raise ValueError(
-            "No supported source files found in upload. Include .py, .js, .ts, .tsx, .jsx, .cjs, or .mjs files."
+            "No source code files were found in upload. Include a repository, archive, or source files from a programming language."
         )

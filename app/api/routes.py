@@ -20,6 +20,7 @@ from app.db.auth_repository import AuthRepository
 from app.db.repository import RunRepository
 from app.models.schemas import (
     AnalyzeRequest,
+    AvailableModel,
     AuthResponse,
     GenerateTestsRequest,
     GoogleAuthConfigResponse,
@@ -175,6 +176,11 @@ def get_system_status(current_user=Depends(get_current_user)):
     )
 
 
+@router.get("/system/models", response_model=list[AvailableModel])
+def get_available_models(current_user=Depends(get_current_user)):
+    return openai_writer.available_models()
+
+
 @router.get("/sample-repository")
 def get_sample_repository(current_user=Depends(get_current_user)):
     if not SAMPLE_REPOSITORY_PATH.exists():
@@ -261,7 +267,7 @@ def generate_tests(request: GenerateTestsRequest, current_user=Depends(get_curre
         snapshot_repository_metadata(repo_path, run_dir)
         analysis = orchestrator.analyze(request.repository_path)
         plan = orchestrator.plan(analysis)
-        generation = orchestrator.generator.generate(request.repository_path, run_dir, analysis, plan)
+        generation = orchestrator.generator.generate(request.repository_path, run_dir, analysis, plan, model=request.model)
         write_json(run_dir / "artifacts" / "analysis.json", analysis.model_dump())
         write_json(run_dir / "artifacts" / "plan.json", plan.model_dump())
         write_json(run_dir / "artifacts" / "generation.json", generation.model_dump())
@@ -285,7 +291,12 @@ def run_tests(request: RunTestsRequest, current_user=Depends(get_current_user)):
 @router.post("/orchestrate")
 def orchestrate_tests(request: OrchestrateRequest, current_user=Depends(get_current_user)):
     try:
-        report = orchestrator.orchestrate(request.repository_path, request.max_retries, user_id=current_user.id)
+        report = orchestrator.orchestrate(
+            request.repository_path,
+            request.max_retries,
+            user_id=current_user.id,
+            model=request.model,
+        )
         return report.model_dump()
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc

@@ -59,6 +59,13 @@ def test_google_auth_config(monkeypatch) -> None:
     }
 
 
+def test_available_models_requires_authentication() -> None:
+    anonymous_client = TestClient(app)
+    response = anonymous_client.get("/system/models", follow_redirects=False)
+
+    assert response.status_code == 401
+
+
 def test_google_login_then_read_sample_repository(monkeypatch) -> None:
     import app.api.routes as routes
 
@@ -80,3 +87,29 @@ def test_google_login_then_read_sample_repository(monkeypatch) -> None:
     sample_response = client.get("/sample-repository")
 
     assert sample_response.status_code == 200
+
+
+def test_google_login_then_read_available_models(monkeypatch) -> None:
+    import app.api.routes as routes
+
+    monkeypatch.setattr(
+        routes,
+        "verify_google_credential",
+        lambda credential: GoogleIdentity(
+            email=f"model-list-{uuid4().hex[:8]}@example.com",
+            full_name="Model List User",
+            google_sub=f"model-list-{credential}",
+        ),
+    )
+
+    login_response = client.post("/auth/google", json={"credential": "fake-model-credential"})
+
+    assert login_response.status_code == 200
+
+    client.cookies.update(login_response.cookies)
+    models_response = client.get("/system/models")
+
+    assert models_response.status_code == 200
+    payload = models_response.json()
+    assert any(item["id"] == "heuristic" for item in payload)
+    assert any(item["id"] == "gpt-5-mini" for item in payload)

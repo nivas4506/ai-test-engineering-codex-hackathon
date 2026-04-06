@@ -7,7 +7,63 @@ from pathlib import Path
 from openai import OpenAI
 
 from app.core.config import DEFAULT_OPENAI_MODEL, OPENAI_REASONING_EFFORT
-from app.models.schemas import ModuleSummary
+from app.models.schemas import AvailableModel, ModuleSummary
+
+
+OPENAI_CODE_MODELS: tuple[AvailableModel, ...] = (
+    AvailableModel(
+        id="gpt-5-mini",
+        label="GPT-5 mini",
+        provider="openai",
+        category="budget",
+        description="Fast and cost-efficient default for routine repository test generation.",
+        recommended=True,
+    ),
+    AvailableModel(
+        id="gpt-5",
+        label="GPT-5",
+        provider="openai",
+        category="balanced",
+        description="Stronger general reasoning for complex repo analysis and edge-case generation.",
+    ),
+    AvailableModel(
+        id="gpt-5.1",
+        label="GPT-5.1",
+        provider="openai",
+        category="balanced",
+        description="High-quality reasoning for harder codebases and more deliberate test planning.",
+    ),
+    AvailableModel(
+        id="gpt-5-codex",
+        label="GPT-5 Codex",
+        provider="openai",
+        category="coding",
+        description="Coding-optimized option for generating and repairing test files.",
+    ),
+    AvailableModel(
+        id="gpt-5.1-codex",
+        label="GPT-5.1 Codex",
+        provider="openai",
+        category="coding",
+        description="Most capable coding-oriented option in this product for codebase-aware test generation.",
+    ),
+    AvailableModel(
+        id="gpt-5.1-codex-mini",
+        label="GPT-5.1 Codex mini",
+        provider="openai",
+        category="coding",
+        description="Lower-cost coding model for smaller repos and faster iteration.",
+    ),
+)
+
+HEURISTIC_FALLBACK_MODEL = AvailableModel(
+    id="heuristic",
+    label="Heuristic fallback",
+    provider="heuristic",
+    category="fallback",
+    description="Built-in deterministic generator used when OpenAI is unavailable.",
+    recommended=False,
+)
 
 
 class OpenAITestWriter:
@@ -23,7 +79,25 @@ class OpenAITestWriter:
     def provider_name(self) -> str:
         return "openai" if self.enabled else "heuristic"
 
-    def generate_module_test(self, module: ModuleSummary, mode: str, repo_path: Path) -> str | None:
+    def available_models(self) -> list[AvailableModel]:
+        models = [
+            model.model_copy(update={"available": self.enabled})
+            for model in OPENAI_CODE_MODELS
+        ]
+        return [HEURISTIC_FALLBACK_MODEL, *models]
+
+    def resolve_model(self, model_override: str | None = None) -> str | None:
+        if not self.enabled:
+            return None
+
+        requested = (model_override or self.model or "").strip()
+        if not requested:
+            return DEFAULT_OPENAI_MODEL
+
+        supported_ids = {model.id for model in OPENAI_CODE_MODELS}
+        return requested if requested in supported_ids else self.model
+
+    def generate_module_test(self, module: ModuleSummary, mode: str, repo_path: Path, model_override: str | None = None) -> str | None:
         if not self._client:
             return None
 
@@ -33,10 +107,10 @@ class OpenAITestWriter:
             return None
 
         if module.language == "python":
-            return self._generate_python_test(module, mode, source)
-        return self._generate_script_test(module, mode, source, repo_path)
+            return self._generate_python_test(module, mode, source, model_override)
+        return self._generate_script_test(module, mode, source, repo_path, model_override)
 
-    def _generate_python_test(self, module: ModuleSummary, mode: str, source: str) -> str | None:
+    def _generate_python_test(self, module: ModuleSummary, mode: str, source: str, model_override: str | None = None) -> str | None:
         inferred_cases = [
             {
                 "function_name": function.name,
@@ -65,9 +139,16 @@ class OpenAITestWriter:
             "- in balanced mode, may call zero-argument functions if safe\n\n"
             f"Source code:\n{source}"
         )
-        return self._run_prompt(instructions, prompt)
+        return self._run_prompt(instructions, prompt, model_override)
 
-    def _generate_script_test(self, module: ModuleSummary, mode: str, source: str, repo_path: Path) -> str | None:
+    def _generate_script_test(
+        self,
+        module: ModuleSummary,
+        mode: str,
+        source: str,
+        repo_path: Path,
+        model_override: str | None = None,
+    ) -> str | None:
         relative_path = Path(module.file_path).resolve().relative_to(repo_path.resolve()).as_posix()
         functions = [function.name for function in module.functions]
         extension_hint = ".test.ts" if module.language == "typescript" else ".test.cjs"
@@ -93,26 +174,27 @@ class OpenAITestWriter:
             "- stays compatible with Node execution\n\n"
             f"Source code:\n{source}"
         )
-        return self._run_prompt(instructions, prompt)
+        return self._run_prompt(instructions, prompt, model_override)
 
-    def _run_prompt(self, instructions: str, prompt: str) -> str | None:
+    def _run_prompt(self, instructions: str, prompt: str, model_override: str | None = None) -> str | None:
+        selected_model = self.resolve_model(model_override)
+        if not selected_model:
+            return None
         try:
-            # Use standard chat completions with reasoning parameters
             response = self._client.chat.completions.create(
-                model=self.model,
+                model=selected_model,
                 messages=[
                     {"role": "developer", "content": instructions},
                     {"role": "user", "content": prompt}
                 ],
-                reasoning_effort=OPENAI_REASONING_EFFORT if self.model == "gpt-5-mini" else None,
+                reasoning_effort=OPENAI_REASONING_EFFORT if selected_model.startswith("gpt-5") else None,
                 max_completion_tokens=4000
             )
             text = response.choices[0].message.content.strip()
         except Exception as e:
-            # Fallback for models that might not support 'developer' role yet or other issues
             try:
                 response = self._client.chat.completions.create(
-                    model=self.model,
+                    model=selected_model,
                     messages=[
                         {"role": "system", "content": instructions},
                         {"role": "user", "content": prompt}

@@ -16,6 +16,7 @@ const els = {
   repositoryPath: document.getElementById("repository_path"),
   repoArchive: document.getElementById("repo_archive"),
   maxRetries: document.getElementById("max_retries"),
+  modelName: document.getElementById("model_name"),
   runButton: document.getElementById("run-button"),
   sampleButton: document.getElementById("sample-button"),
   reportButton: document.getElementById("report-button"),
@@ -31,6 +32,11 @@ const els = {
   modelHint: document.getElementById("model-hint"),
   repoArchiveName: document.getElementById("repo-archive-name"),
   uploadFeedback: document.getElementById("upload-feedback"),
+};
+
+const modelState = {
+  options: [],
+  selected: "",
 };
 
 function escapeHtml(value) {
@@ -275,6 +281,7 @@ async function runOrchestration(event) {
   const payload = {
     repository_path: els.repositoryPath.value.trim(),
     max_retries: Number(els.maxRetries.value),
+    model: els.modelName?.value || null,
   };
 
   try {
@@ -375,7 +382,7 @@ function handleArchiveSelection() {
     setUploadFeedback("File selected. Uploading now...", "busy");
     void uploadArchive();
   } else {
-    setUploadFeedback("The upload starts as soon as you choose a file or archive.");
+    setUploadFeedback("The upload starts as soon as you choose a folder, archive, or source file.");
   }
 }
 
@@ -471,6 +478,62 @@ async function loadSystemStatus() {
   }
 }
 
+function renderModelOptions(models) {
+  if (!els.modelName) {
+    return;
+  }
+
+  modelState.options = models;
+  const selected = modelState.selected || systemState.ai_model || "heuristic";
+  els.modelName.innerHTML = models
+    .map((model) => {
+      const disabled = model.provider === "openai" && !model.available ? " disabled" : "";
+      const selectedAttr = selected === model.id ? " selected" : "";
+      const suffix = model.recommended ? " (recommended)" : "";
+      return `<option value="${escapeHtml(model.id)}"${disabled}${selectedAttr}>${escapeHtml(model.label + suffix)}</option>`;
+    })
+    .join("");
+
+  if (!models.some((model) => model.id === selected)) {
+    els.modelName.value = models[0]?.id || "";
+  }
+}
+
+async function loadAvailableModels() {
+  if (!els.modelName) {
+    return;
+  }
+
+  try {
+    const response = await fetch("/system/models");
+    const raw = await response.text();
+    let data = [];
+    if (raw) {
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        data = [];
+      }
+    }
+    if (!response.ok || !Array.isArray(data) || data.length === 0) {
+      throw new Error("No model list available.");
+    }
+    renderModelOptions(data);
+  } catch {
+    els.modelName.innerHTML = '<option value="heuristic">Heuristic fallback</option>';
+  }
+}
+
+if (els.modelName) {
+  els.modelName.addEventListener("change", () => {
+    modelState.selected = els.modelName.value;
+    const selectedModel = modelState.options.find((item) => item.id === modelState.selected);
+    if (selectedModel && els.modelHint) {
+      els.modelHint.textContent = selectedModel.description;
+    }
+  });
+}
+
 els.form.addEventListener("submit", runOrchestration);
 els.repoArchive.addEventListener("change", handleArchiveSelection);
 els.sampleButton.addEventListener("click", async () => {
@@ -501,4 +564,5 @@ ensureSamplePath()
     }
   });
 loadSystemStatus();
+loadAvailableModels();
 loadRecentRuns();

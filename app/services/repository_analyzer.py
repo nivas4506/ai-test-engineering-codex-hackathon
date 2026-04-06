@@ -5,6 +5,7 @@ import re
 from pathlib import Path
 
 from app.models.schemas import AnalysisResult, FunctionCase, ModuleFunction, ModuleSummary
+from app.utils.files import ALLOWED_CODE_SUFFIXES
 
 
 class RepositoryAnalyzer:
@@ -18,6 +19,14 @@ class RepositoryAnalyzer:
             raise FileNotFoundError(f"Repository path does not exist: {repo_path}")
 
         if repo_path.is_file():
+            if not self._is_supported_source(repo_path):
+                if repo_path.suffix.lower() in ALLOWED_CODE_SUFFIXES:
+                    raise ValueError(
+                        "Source code was uploaded successfully, but automated test generation currently supports Python, JavaScript, and TypeScript projects only."
+                    )
+                raise ValueError(
+                    "No supported source files were found. Upload Python, JavaScript, or TypeScript source files to generate tests."
+                )
             modules = [self._summarize_file(repo_path.parent, repo_path)]
         else:
             modules = [
@@ -39,6 +48,15 @@ class RepositoryAnalyzer:
             detected_languages.append("typescript")
 
         if not modules:
+            unsupported_code_files = [
+                str(file_path)
+                for file_path in sorted(repo_path.rglob("*"))
+                if file_path.is_file() and file_path.suffix.lower() in ALLOWED_CODE_SUFFIXES and not self._should_skip(file_path)
+            ]
+            if unsupported_code_files:
+                raise ValueError(
+                    "Source code was uploaded successfully, but automated test generation currently supports Python, JavaScript, and TypeScript projects only."
+                )
             raise ValueError(
                 "No supported source files were found. Upload Python, JavaScript, or TypeScript source files to generate tests."
             )
