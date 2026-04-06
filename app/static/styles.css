@@ -488,12 +488,14 @@ label {
 }
 
 input,
+select,
 textarea,
 button {
   font: inherit;
 }
 
 input,
+select,
 textarea {
   width: 100%;
   border: 1px solid var(--line);
@@ -506,10 +508,37 @@ textarea {
 }
 
 input:focus,
+select:focus,
 textarea:focus {
   border-color: rgba(217, 255, 63, 0.45);
   background: rgba(255, 255, 255, 0.055);
   box-shadow: 0 0 0 4px rgba(217, 255, 63, 0.08);
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  padding-right: 48px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(244, 244, 244, 0.9) 50%),
+    linear-gradient(135deg, rgba(244, 244, 244, 0.9) 50%, transparent 50%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.035));
+  background-position:
+    calc(100% - 22px) calc(50% - 3px),
+    calc(100% - 16px) calc(50% - 3px),
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
+  color-scheme: dark;
+}
+
+select option {
+  background: #111111;
+  color: var(--text);
 }
 
 textarea {
