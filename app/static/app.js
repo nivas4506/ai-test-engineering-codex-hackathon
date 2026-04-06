@@ -136,6 +136,7 @@ function getModelDisplay(provider, model) {
 function setMetrics(report) {
   const execution = report.execution_history.at(-1);
   const latestGeneration = report.generation_history.at(-1);
+  const languageSummary = report.analysis.detected_languages.length > 0 ? report.analysis.detected_languages.join(", ") : "unknown";
   const cards = [
     { label: "Run ID", value: report.run_id, sublabel: report.status.toUpperCase() },
     { label: "Iterations", value: String(report.iterations), sublabel: "retry loop" },
@@ -143,7 +144,7 @@ function setMetrics(report) {
     {
       label: "AI Model",
       value: getModelDisplay(latestGeneration?.provider ?? systemState.ai_provider, latestGeneration?.model ?? systemState.ai_model),
-      sublabel: latestGeneration?.provider ?? systemState.ai_provider,
+      sublabel: `${latestGeneration?.provider ?? systemState.ai_provider} | ${languageSummary}`,
     },
   ];
 
@@ -161,13 +162,15 @@ function setMetrics(report) {
 }
 
 function setTimeline(report) {
+  const phaseLabels = ["Scout + Builder", "Runner", "Debugger"];
   const history = report.execution_history
     .map((execution, index) => {
       const debug = report.debug_history[index];
+      const phaseLine = debug ? `${phaseLabels[0]} -> ${phaseLabels[1]} -> ${phaseLabels[2]}` : `${phaseLabels[0]} -> ${phaseLabels[1]}`;
       return `
         <div class="timeline-card reveal-card">
           <h3>Iteration ${index + 1}</h3>
-          <span>Status: ${escapeHtml(execution.status)}</span>
+          <span>Status: ${escapeHtml(execution.status)} | ${escapeHtml(phaseLine)}</span>
           <p>${execution.tests_collected ?? "n/a"} collected, exit code ${execution.exit_code}, duration ${execution.duration_seconds.toFixed(2)}s.</p>
           <p>${escapeHtml(debug ? debug.diagnosis : "No debugger intervention needed.")}</p>
         </div>
@@ -180,18 +183,53 @@ function setTimeline(report) {
 
 function setSummary(report) {
   const generated = report.generation_history.at(-1);
-  const lines = [
-    `Repository: ${report.repository_path}`,
-    `Planner summary: ${report.plan.summary}`,
-    `Generator summary: ${generated ? generated.summary : "n/a"}`,
-    `AI provider: ${generated?.provider ?? systemState.ai_provider}`,
-    `AI model: ${generated?.model ?? (systemState.ai_model || "heuristic fallback")}`,
+  const execution = report.execution_history.at(-1);
+  const moduleCount = report.analysis.modules.length;
+  const functionCount = report.analysis.modules.reduce((count, module) => count + module.functions.length, 0);
+  const nextMove = report.status === "passed"
+    ? "Agent finished successfully. Review logs and export the report."
+    : report.debug_history.at(-1)?.diagnosis || "Agent stopped after the latest execution error.";
+  const cards = [
+    {
+      label: "Mission",
+      value: "Inspect repository and produce a runnable testing verdict.",
+    },
+    {
+      label: "Project Shape",
+      value: `${report.analysis.detected_languages.join(", ") || "unknown"} | ${moduleCount} modules | ${functionCount} functions`,
+    },
+    {
+      label: "Strategy",
+      value: report.plan.summary,
+    },
+    {
+      label: "Generation",
+      value: generated ? generated.summary : "No generation record available.",
+    },
+    {
+      label: "Execution",
+      value: execution
+        ? `${execution.status.toUpperCase()} with exit code ${execution.exit_code} and ${execution.tests_collected ?? "n/a"} collected tests.`
+        : "No execution record available.",
+    },
+    {
+      label: "Next Move",
+      value: nextMove,
+    },
   ];
 
   els.summary.innerHTML = `
-    <div class="json-card">
-      <h3>Run Summary</h3>
-      <pre>${escapeHtml(lines.join("\n"))}</pre>
+    <div class="agent-brief-grid">
+      ${cards
+        .map(
+          (card) => `
+            <article class="agent-brief-card">
+              <span>${escapeHtml(card.label)}</span>
+              <p>${escapeHtml(card.value)}</p>
+            </article>
+          `,
+        )
+        .join("")}
     </div>
   `;
 }
@@ -310,7 +348,7 @@ async function runOrchestration(event) {
     setStatus("ERROR", "error");
     els.summary.innerHTML = `
       <div class="json-card">
-        <h3>Request Error</h3>
+        <h3>Agent Request Error</h3>
         <pre>${escapeHtml(error.message || error)}</pre>
       </div>
     `;
@@ -360,13 +398,13 @@ async function uploadArchive() {
       els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
     setUploadFeedback("Upload complete. Repository path has been filled in.", "success");
-    setStatus(`Uploaded ${data.original_filename}`);
+    setStatus(`Agent ready for ${data.original_filename}`);
   } catch (error) {
     setStatus("UPLOAD ERROR", "error");
     setUploadFeedback(error.message || "Upload failed.", "error");
     els.summary.innerHTML = `
       <div class="json-card">
-        <h3>Upload Error</h3>
+        <h3>Agent Upload Error</h3>
         <pre>${escapeHtml(error.message || error)}</pre>
       </div>
     `;
@@ -471,12 +509,12 @@ async function loadSystemStatus() {
     if (els.modelHint) {
       els.modelHint.textContent =
         data.ai_provider === "openai"
-          ? `AI generation is active with ${data.ai_model} (${data.reasoning_effort} reasoning).`
-          : "OpenAI key not configured. The app is using the built-in heuristic generator.";
+          ? `Tester agent generation is active with ${data.ai_model} (${data.reasoning_effort} reasoning).`
+          : "OpenAI key not configured. The tester agent is using the built-in heuristic generator.";
     }
   } catch (error) {
     if (els.modelHint) {
-      els.modelHint.textContent = "AI model status could not be loaded.";
+      els.modelHint.textContent = "Tester agent model status could not be loaded.";
     }
   }
 }
@@ -564,7 +602,7 @@ ensureSamplePath()
   })
   .catch(() => {
     if (els.modelHint) {
-      els.modelHint.textContent = "Sample repository is unavailable in this environment. Upload a project or enter a path manually.";
+      els.modelHint.textContent = "Sample repository is unavailable in this environment. Upload a project and launch the tester agent manually.";
     }
   });
 loadSystemStatus();

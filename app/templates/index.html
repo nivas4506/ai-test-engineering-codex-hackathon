@@ -28,15 +28,15 @@
 
       <section class="hero">
         <div class="hero-topline">
-          <div class="badge">Liquid UI workspace</div>
-          <div class="hero-chip" id="model-chip">FastAPI + Orchestrator + Pytest</div>
+          <div class="badge">Autonomous tester agent</div>
+          <div class="hero-chip" id="model-chip">Planner + Generator + Runner + Debugger</div>
         </div>
         <div class="hero-grid">
           <div class="hero-copy">
-            <div class="eyebrow">AI-assisted testing</div>
-            <h1>AI Test Engineering</h1>
+            <div class="eyebrow">Agentic quality engineering</div>
+            <h1>Your tester agent for real repositories</h1>
             <p>
-              Upload a repository, generate tests, run them automatically, and review the result in one clear workspace.
+              Give the agent a repository, let it study the project, create tests, run them, retry safely, and return a clear testing verdict.
             </p>
           </div>
           <div class="hero-side">
@@ -67,14 +67,14 @@
 
       <section class="layout">
         <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="section-kicker">Inputs</div>
-              <h2>Control Deck</h2>
-            </div>
-            <div class="panel-note">Choose a repository and start the test flow.</div>
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Mission Setup</div>
+            <h2>Tester Agent Mission</h2>
           </div>
-          <form class="stack" id="orchestrate-form">
+          <div class="panel-note">Point the agent at a project and tell it how hard to push.</div>
+        </div>
+        <form class="stack" id="orchestrate-form">
             <label>
               Repository path
               <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
@@ -104,7 +104,7 @@
               </select>
             </label>
             <div class="actions">
-              <button class="button" id="run-button" type="submit">Run test flow</button>
+              <button class="button" id="run-button" type="submit">Launch tester agent</button>
               <button class="button secondary" id="sample-button" type="button">Use sample repo</button>
               <button class="button secondary" id="report-button" type="button">Reload report</button>
             </div>
@@ -116,16 +116,16 @@
         </div>
 
         <div class="panel">
-          <div class="panel-head">
-            <div>
-              <div class="section-kicker">Execution</div>
-              <h2>Iteration Timeline</h2>
-            </div>
-            <div class="panel-note">Each attempt shows the test result and the next decision.</div>
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Agent Activity</div>
+            <h2>Tester Agent Timeline</h2>
           </div>
-          <div class="timeline" id="timeline">
-            <div class="empty">Run the orchestrator to see live report data.</div>
-          </div>
+          <div class="panel-note">Each attempt shows what the agent did, what happened, and why it changed course.</div>
+        </div>
+        <div class="timeline" id="timeline">
+          <div class="empty">Run the orchestrator to see live report data.</div>
+        </div>
           <div class="loading-indicator" id="loading-indicator" aria-hidden="true">
             <span class="spinner"></span>
             <span>Running orchestration...</span>
@@ -135,22 +135,22 @@
 
       <section class="layout">
         <div class="panel" id="summary">
-          <div class="panel-head">
-            <div>
-              <div class="section-kicker">Planner</div>
-              <h2>Run Summary</h2>
-            </div>
-            <div class="panel-note">Repository, planner, and generator overview.</div>
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Agent Brief</div>
+            <h2>Agent Assessment</h2>
           </div>
-          <div class="empty">Planner and generator summaries appear here.</div>
+          <div class="panel-note">What the tester agent understood, generated, and decided.</div>
+        </div>
+          <div class="empty">The tester agent assessment appears here after a run.</div>
         </div>
         <div class="panel" id="logs">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Test Output</div>
+              <div class="section-kicker">Agent Output</div>
               <h2>Execution Logs</h2>
             </div>
-            <div class="panel-note">Real stdout and stderr from the last run.</div>
+            <div class="panel-note">Real stdout and stderr captured while the agent executed tests.</div>
           </div>
           <div class="empty">stdout and stderr will appear after a run.</div>
         </div>
@@ -170,10 +170,10 @@
       <section class="panel">
         <div class="panel-head">
           <div>
-            <div class="section-kicker">Recent Runs</div>
+            <div class="section-kicker">Agent History</div>
             <h2>Saved runs</h2>
           </div>
-          <div class="panel-note">Click any recent run to load it back into this page.</div>
+          <div class="panel-note">Click any previous agent run to load it back into this page.</div>
         </div>
         <div class="run-list" id="recent-runs">
           <div class="empty">No completed runs yet.</div>

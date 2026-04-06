@@ -30,17 +30,17 @@ async function loadAgentPage() {
   const totalFunctions = report.analysis.modules.reduce((count, module) => count + module.functions.length, 0);
 
   agentCards.innerHTML = [
-    agentCard(1, "Understand the code", "The app first reads the project and figures out what files and functions matter.", [
+    agentCard(1, "Scout the repository", "The tester agent first reads the project and figures out what files, languages, and functions matter.", [
       `${moduleCount} code files checked`,
       `${totalFunctions} main functions found`,
       report.plan.summary,
     ]),
-    agentCard(2, "Write the tests", "The app creates test files based on what it learned from the code.", [
+    agentCard(2, "Build the coverage", "The tester agent creates runnable tests based on what it learned from the repository.", [
       `${latestGeneration.generated_files.length} test files created`,
       `Style: ${latestGeneration.mode}`,
       latestGeneration.summary,
     ]),
-    agentCard(3, "Run and check", "The app runs pytest for real and uses that result as the final truth.", [
+    agentCard(3, "Execute and judge", "The tester agent runs tests for real and treats that execution result as the source of truth.", [
       `Result: ${latestExecution.status}`,
       `Exit code: ${latestExecution.exit_code}`,
       `${latestExecution.tests_collected ?? "n/a"} tests found`,
@@ -53,7 +53,7 @@ async function loadAgentPage() {
     .join(" | ");
 
   executionLive.textContent = latestDebug
-    ? `${latestExecution.status.toUpperCase()} after ${report.iterations} tries. The app explains the issue like this: ${latestDebug.diagnosis}`
+    ? `${latestExecution.status.toUpperCase()} after ${report.iterations} tries. The tester agent diagnosed the issue like this: ${latestDebug.diagnosis}`
     : `${latestExecution.status.toUpperCase()} after ${report.iterations} tries. No extra debug step was needed.`;
 }
 
