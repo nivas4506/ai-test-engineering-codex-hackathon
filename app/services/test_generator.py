@@ -32,9 +32,6 @@ class TestGeneratorService:
             files.append(self._write_python_conftest(generated_dir, repo_path))
 
         for module in analysis.modules:
-            if not module.functions and mode == "safe":
-                continue
-
             target_path = self._target_path_for_module(generated_dir, module)
             test_content = self._build_test_for_module(module, mode, repo_path, selected_model)
             target_path.write_text(test_content, encoding="utf-8")
