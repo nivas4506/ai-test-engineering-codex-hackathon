@@ -69,6 +69,42 @@ ALLOWED_CODE_SUFFIXES = TESTABLE_SOURCE_SUFFIXES | {
     ".bat",
     ".cmd",
 }
+PROJECT_MARKER_FILENAMES = {
+    "package.json",
+    "pyproject.toml",
+    "requirements.txt",
+    "setup.py",
+    "pipfile",
+    "pipfile.lock",
+    "poetry.lock",
+    "environment.yml",
+    "pom.xml",
+    "build.gradle",
+    "build.gradle.kts",
+    "settings.gradle",
+    "settings.gradle.kts",
+    "cargo.toml",
+    "go.mod",
+    "composer.json",
+    "gemfile",
+    "rakefile",
+    "cmakelists.txt",
+    "makefile",
+    "mix.exs",
+    "rebar.config",
+    "project.clj",
+    "deps.edn",
+    "package.swift",
+    "pubspec.yaml",
+}
+PROJECT_MARKER_SUFFIXES = {
+    ".csproj",
+    ".fsproj",
+    ".vbproj",
+    ".sln",
+    ".xcodeproj",
+    ".xcworkspace",
+}
 UNSUPPORTED_ARCHIVE_SUFFIXES = {".rar", ".7z", ".bz2", ".xz"}
 UPLOAD_PATH_PATTERN = re.compile(r"[/\\]uploads[/\\](?P<upload_id>[a-f0-9]{12})[/\\]repo(?:[/\\]|$)")
 
@@ -235,6 +271,12 @@ def extract_upload_id_from_repository_path(repository_path: str | None) -> str |
     return match.group("upload_id") if match else None
 
 
+def is_supported_project_file(path: Path) -> bool:
+    file_name = path.name.lower()
+    suffix = path.suffix.lower()
+    return suffix in ALLOWED_CODE_SUFFIXES or file_name in PROJECT_MARKER_FILENAMES or suffix in PROJECT_MARKER_SUFFIXES
+
+
 def _extract_zip_archive(archive_path: Path, extracted_dir: Path) -> None:
     with zipfile.ZipFile(archive_path) as archive:
         for member in archive.infolist():
@@ -271,17 +313,17 @@ def _safe_relative_path(raw_path: str) -> Path:
 
 def _validate_uploaded_repository(path: Path) -> None:
     if path.is_file():
-        if path.suffix.lower() not in ALLOWED_CODE_SUFFIXES:
+        if not is_supported_project_file(path):
             raise ValueError(
-                "Uploaded file is not recognized as source code. Upload a code file, project folder, or supported archive."
+                "Uploaded file is not recognized as source code or a project file. Upload a project file, code file, repository folder, or supported archive."
             )
         return
 
     if not path.exists() or not path.is_dir():
         raise ValueError("Uploaded content could not be prepared as a repository.")
 
-    has_code_files = any(file_path.suffix.lower() in ALLOWED_CODE_SUFFIXES for file_path in path.rglob("*") if file_path.is_file())
-    if not has_code_files:
+    has_supported_project_files = any(is_supported_project_file(file_path) for file_path in path.rglob("*") if file_path.is_file())
+    if not has_supported_project_files:
         raise ValueError(
-            "No source code files were found in upload. Include a repository, archive, or source files from a programming language."
+            "No source code or project files were found in upload. Include a repository, archive, or project files from a programming language or framework."
         )

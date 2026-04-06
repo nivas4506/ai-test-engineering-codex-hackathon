@@ -21,6 +21,17 @@ def test_upload_accepts_single_java_file() -> None:
     assert (repository_path / "HelloWorld.java").exists()
 
 
+def test_upload_accepts_single_package_manifest() -> None:
+    upload_id, repository_path = save_uploaded_input(
+        "package.json",
+        b'{ "name": "demo", "version": "1.0.0" }',
+    )
+
+    assert upload_id
+    assert repository_path.is_dir()
+    assert (repository_path / "package.json").exists()
+
+
 def test_upload_accepts_bundle_with_go_files() -> None:
     upload_id, repository_path = save_uploaded_bundle(
         [
@@ -46,6 +57,19 @@ def test_analyzer_accepts_generic_language_files(tmp_path: Path) -> None:
     assert analysis.generic_files == [str(repository / "App.java")]
     assert len(analysis.modules) == 1
     assert analysis.modules[0].language == "generic"
+
+
+def test_analyzer_accepts_manifest_only_repository(tmp_path: Path) -> None:
+    repository = tmp_path / "manifest-repo"
+    repository.mkdir()
+    (repository / "package.json").write_text('{ "name": "manifest-only", "version": "1.0.0" }', encoding="utf-8")
+
+    analysis = RepositoryAnalyzer().analyze(str(repository))
+
+    assert analysis.detected_languages == ["generic"]
+    assert analysis.generic_files == [str(repository / "package.json")]
+    assert len(analysis.modules) == 1
+    assert analysis.modules[0].module_import == "package.json"
 
 
 def test_uploaded_repository_is_restored_when_temp_path_is_missing(monkeypatch: pytest.MonkeyPatch) -> None:

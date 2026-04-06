@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from app.models.schemas import AnalysisResult, FunctionCase, ModuleFunction, ModuleSummary
-from app.utils.files import ALLOWED_CODE_SUFFIXES
+from app.utils.files import ALLOWED_CODE_SUFFIXES, is_supported_project_file
 
 
 class RepositoryAnalyzer:
@@ -22,7 +22,7 @@ class RepositoryAnalyzer:
         if repo_path.is_file():
             if not self._is_supported_source(repo_path):
                 raise ValueError(
-                    "No supported source files were found. Upload source-code files from a programming language."
+                    "No supported source code or project files were found. Upload source files or standard project manifests."
                 )
             modules = [self._summarize_file(repo_path.parent, repo_path)]
         else:
@@ -49,7 +49,7 @@ class RepositoryAnalyzer:
 
         if not modules:
             raise ValueError(
-                "No supported source files were found. Upload source-code files from a programming language."
+                "No supported source code or project files were found. Upload source files or standard project manifests."
             )
 
         return AnalysisResult(
@@ -177,8 +177,7 @@ class RepositoryAnalyzer:
         return names
 
     def _is_supported_source(self, file_path: Path) -> bool:
-        suffix = file_path.suffix.lower()
-        return suffix in ALLOWED_CODE_SUFFIXES
+        return is_supported_project_file(file_path)
 
     def _should_skip(self, file_path: Path) -> bool:
         parts = set(file_path.parts)

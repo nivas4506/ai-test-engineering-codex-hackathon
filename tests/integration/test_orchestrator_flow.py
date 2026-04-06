@@ -59,3 +59,33 @@ def test_orchestrator_runs_generic_source_smoke_tests(
     assert report.execution_history
     assert report.execution_history[-1].tests_collected is not None
     assert any(path.name == "test_App_java.py" for path in (temp_run_dir / "generated_tests").iterdir())
+
+
+@pytest.mark.integration
+def test_orchestrator_runs_manifest_only_repository_smoke_tests(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    temp_run_dir: Path,
+) -> None:
+    repository = tmp_path / "manifest-repo"
+    repository.mkdir()
+    (repository / "package.json").write_text(
+        '{ "name": "manifest-repo", "version": "1.0.0" }\n',
+        encoding="utf-8",
+    )
+
+    monkeypatch.setattr(
+        "app.services.orchestrator.create_run_directory",
+        lambda: ("manifestrun", temp_run_dir),
+    )
+
+    service = OrchestratorService()
+    service.generator.openai_writer._client = None
+
+    report = service.orchestrate(str(repository), max_retries=1, user_id=None)
+
+    assert report.run_id == "manifestrun"
+    assert report.status == "passed"
+    assert report.analysis.detected_languages == ["generic"]
+    assert report.execution_history[-1].tests_collected is not None
+    assert any(path.name == "test_package_json.py" for path in (temp_run_dir / "generated_tests").iterdir())
