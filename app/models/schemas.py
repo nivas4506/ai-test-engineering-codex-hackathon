@@ -233,6 +233,13 @@ class CoverageReport(BaseModel):
     suggested_additional_tests: list[str] = Field(default_factory=list)
 
 
+class ImprovementReport(BaseModel):
+    rerun_summary: str = ""
+    optimization_notes: list[str] = Field(default_factory=list)
+    ci_cd_suggestions: list[str] = Field(default_factory=list)
+    advanced_test_suggestions: list[str] = Field(default_factory=list)
+
+
 class RunReport(BaseModel):
     run_id: str
     repository_path: str
@@ -244,6 +251,7 @@ class RunReport(BaseModel):
     execution_history: list[ExecutionResult]
     debug_history: list[DebugResult]
     coverage_report: CoverageReport = Field(default_factory=CoverageReport)
+    improvement_report: ImprovementReport = Field(default_factory=ImprovementReport)
     artifact_paths: dict[str, Any]
 
 

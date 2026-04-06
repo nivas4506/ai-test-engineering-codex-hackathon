@@ -194,63 +194,94 @@ function setSummary(report) {
   const nextMove = report.status === "passed"
     ? "Agent finished successfully. Review logs and export the report."
     : report.debug_history.at(-1)?.diagnosis || "Agent stopped after the latest execution error.";
-  const cards = [
+  const sections = [
     {
-      label: "Codebase Summary",
-      value: `${moduleCount} modules | ${functionCount} functions | ${classCount} classes | ${endpointCount} endpoints`,
+      title: "Codebase Analysis",
+      items: [
+        `${moduleCount} modules`,
+        `${functionCount} functions`,
+        `${classCount} classes`,
+        `${endpointCount} endpoints`,
+        `${report.analysis.dependency_map?.length || 0} dependency links`,
+      ],
     },
     {
-      label: "Dependency Map",
-      value: `${report.analysis.dependency_map?.length || 0} internal links mapped across ${report.analysis.detected_languages.join(", ") || "unknown"} sources`,
+      title: "Test Generation",
+      items: generated
+        ? [
+            `${generated.generated_files.length} generated files`,
+            generated.summary,
+            ...generated.generated_files.slice(0, 3).map((file) => PathLabel(file.file_path, file.strategy)),
+          ]
+        : ["No generation record available."],
     },
     {
-      label: "Generated Tests",
-      value: generated
-        ? `${generated.generated_files.length} files created. ${generated.summary}`
-        : "No generation record available.",
+      title: "Execution Report",
+      items: execution
+        ? [
+            `Status: ${execution.status.toUpperCase()}`,
+            `Exit code: ${execution.exit_code}`,
+            `Collected tests: ${execution.tests_collected ?? "n/a"}`,
+            `Duration: ${execution.duration_seconds.toFixed(2)}s`,
+          ]
+        : ["No execution record available."],
     },
     {
-      label: "Execution Report",
-      value: execution
-        ? `${execution.status.toUpperCase()} with exit code ${execution.exit_code}, ${execution.tests_collected ?? "n/a"} collected tests, ${execution.duration_seconds.toFixed(2)}s runtime.`
-        : "No execution record available.",
+      title: "Bug Report",
+      items: topFinding
+        ? [
+            `Severity: ${topFinding.severity.toUpperCase()}`,
+            `Issue: ${topFinding.title}`,
+            topFinding.root_cause,
+            `Location: ${topFinding.file_path || "n/a"}${topFinding.line_number ? `:${topFinding.line_number}` : ""}`,
+          ]
+        : ["No blocking bug was reported after the latest execution."],
     },
     {
-      label: "Bug Report",
-      value: topFinding
-        ? `${topFinding.severity.toUpperCase()}: ${topFinding.title}. ${topFinding.root_cause}`
-        : "No blocking bug was reported after the latest execution.",
+      title: "Fix Suggestion",
+      items: topFix
+        ? [
+            topFix.title,
+            topFix.summary,
+            `Target: ${topFix.file_path || "n/a"}${topFix.line_number ? `:${topFix.line_number}` : ""}`,
+          ]
+        : [nextMove],
     },
     {
-      label: "Fix Suggestion",
-      value: topFix ? `${topFix.title}: ${topFix.summary}` : nextMove,
-    },
-    {
-      label: "Coverage Estimate",
-      value: report.coverage_report
-        ? `${report.coverage_report.estimated_line_coverage}% estimated line coverage with ${report.coverage_report.missing_edge_cases.length} known gaps`
-        : "Coverage estimate unavailable.",
-    },
-    {
-      label: "Next Move",
-      value: nextMove,
+      title: "Coverage and Improvement",
+      items: report.coverage_report
+        ? [
+            `${report.coverage_report.estimated_line_coverage}% estimated line coverage`,
+            `Missing gaps: ${report.coverage_report.missing_edge_cases.length}`,
+            report.improvement_report?.rerun_summary || nextMove,
+          ]
+        : ["Coverage estimate unavailable."],
     },
   ];
 
   els.summary.innerHTML = `
-    <div class="agent-brief-grid">
-      ${cards
+    <div class="assessment-grid">
+      ${sections
         .map(
-          (card) => `
-            <article class="agent-brief-card">
-              <span>${escapeHtml(card.label)}</span>
-              <p>${escapeHtml(card.value)}</p>
+          (section) => `
+            <article class="assessment-section">
+              <span>${escapeHtml(section.title)}</span>
+              <ul class="assessment-list">
+                ${section.items
+                  .map((item) => `<li>${escapeHtml(item)}</li>`)
+                  .join("")}
+              </ul>
             </article>
           `,
         )
         .join("")}
     </div>
   `;
+}
+
+function PathLabel(path, strategy) {
+  const fileName = String(path).split(/[\\/]/).pop();
+  return `${fileName} -> ${strategy}`;
 }
 
 function getLogIcon(line) {

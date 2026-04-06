@@ -27,8 +27,11 @@ def test_orchestrator_generates_executes_and_writes_artifacts(
     assert report.generation_history
     assert report.execution_history
     assert report.coverage_report.estimated_line_coverage > 0
+    assert report.improvement_report.rerun_summary
+    assert report.improvement_report.ci_cd_suggestions
     assert (temp_run_dir / "artifacts" / "final_report.json").exists()
     assert (temp_run_dir / "artifacts" / "coverage_report.json").exists()
+    assert (temp_run_dir / "artifacts" / "improvement_report.json").exists()
     assert any(path.name == "test_math_utils.py" for path in (temp_run_dir / "generated_tests").iterdir())
 
 

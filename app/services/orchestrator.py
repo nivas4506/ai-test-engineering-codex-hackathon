@@ -8,6 +8,7 @@ from app.models.schemas import (
     DebugResult,
     ExecutionResult,
     GenerationResult,
+    ImprovementReport,
     PlanResult,
     RunReport,
 )
@@ -93,6 +94,10 @@ class OrchestratorService:
         artifact_paths["coverage_report"] = str(
             write_json(run_dir / "artifacts" / "coverage_report.json", coverage_report.model_dump())
         )
+        improvement_report = self._build_improvement_report(analysis, execution_history, debug_history)
+        artifact_paths["improvement_report"] = str(
+            write_json(run_dir / "artifacts" / "improvement_report.json", improvement_report.model_dump())
+        )
 
         report = RunReport(
             run_id=run_id,
@@ -105,6 +110,7 @@ class OrchestratorService:
             execution_history=execution_history,
             debug_history=debug_history,
             coverage_report=coverage_report,
+            improvement_report=improvement_report,
             artifact_paths=artifact_paths,
         )
         report_path = write_json(run_dir / "artifacts" / "final_report.json", report.model_dump())
@@ -171,4 +177,58 @@ class OrchestratorService:
             covered_areas=covered_areas,
             missing_edge_cases=missing_edge_cases,
             suggested_additional_tests=suggested_additional_tests,
+        )
+
+    def _build_improvement_report(
+        self,
+        analysis: AnalysisResult,
+        execution_history: list[ExecutionResult],
+        debug_history: list[DebugResult],
+    ) -> ImprovementReport:
+        latest_execution = execution_history[-1] if execution_history else None
+        latest_debug = debug_history[-1] if debug_history else None
+
+        if latest_execution is None:
+            rerun_summary = "No execution history is available yet."
+        elif latest_execution.status == "passed":
+            rerun_summary = f"Tests were re-run successfully after {len(execution_history)} execution cycle(s)."
+        elif debug_history:
+            rerun_summary = (
+                f"Agent completed {len(execution_history)} execution cycle(s) and ended with "
+                f"{latest_execution.status.upper()} after applying safer retry logic."
+            )
+        else:
+            rerun_summary = f"Single execution ended with {latest_execution.status.upper()} and no retry was applied."
+
+        optimization_notes = [
+            "Prioritize deterministic assertions over broad smoke tests for modules with clearly inferred behavior.",
+            "Keep retry depth low for unstable environments and widen only after import stability is proven.",
+        ]
+        if latest_debug:
+            optimization_notes.append(f"Latest retry insight: {latest_debug.diagnosis}")
+        if analysis.dependency_map:
+            optimization_notes.append(
+                f"Focus deeper integration coverage on the {len(analysis.dependency_map)} detected dependency links."
+            )
+
+        ci_cd_suggestions = [
+            "Run pytest on every pull request and publish the generated test report as a CI artifact.",
+            "Use GitHub Actions to run unit, integration, and smoke checks separately for faster failure isolation.",
+        ]
+        if analysis.api_endpoints:
+            ci_cd_suggestions.append("Add API contract checks to CI so endpoint changes fail fast before deployment.")
+
+        advanced_test_suggestions = []
+        if analysis.api_endpoints:
+            advanced_test_suggestions.append("Add authenticated API negative tests for missing headers, invalid payloads, and error responses.")
+            advanced_test_suggestions.append("Add light performance checks around the busiest API endpoints.")
+        advanced_test_suggestions.append("Add security-oriented input validation tests for malformed, empty, and boundary-case inputs.")
+        if any(language in {"javascript", "typescript"} for language in analysis.detected_languages):
+            advanced_test_suggestions.append("Add browser or UI flow checks for JavaScript/TypeScript-driven user journeys.")
+
+        return ImprovementReport(
+            rerun_summary=rerun_summary,
+            optimization_notes=optimization_notes,
+            ci_cd_suggestions=ci_cd_suggestions,
+            advanced_test_suggestions=advanced_test_suggestions,
         )
