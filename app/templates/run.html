@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Test Engineering Run</title>
+    <link rel="stylesheet" href="/static/styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topnav">
+        <a class="brand" href="/">
+          <span class="brand-mark">
+            <img class="brand-logo" src="/static/logo.svg" alt="AI Test Engineering logo" />
+          </span>
+          <span>AI Test Engineering</span>
+        </a>
+        <nav class="navlinks">
+          <a href="/">Upload</a>
+          <a class="active" href="/run">Run</a>
+          <a href="/agents">How It Works</a>
+          <a href="/playbooks">What To Do</a>
+          <a href="/reports">Results</a>
+          <a href="/profile">Profile</a>
+        </nav>
+        <div class="nav-auth">
+          <span class="user-chip" id="session-user">Loading...</span>
+          <button class="button secondary nav-auth-button" id="logout-button" type="button">Logout</button>
+        </div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-topline">
+          <div class="badge">Execution workspace</div>
+          <div class="hero-chip" id="model-chip">Planner + Generator + Runner + Debugger</div>
+        </div>
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <div class="eyebrow">Tester agent run page</div>
+            <h1>Launch the mission and inspect the run</h1>
+            <p>
+              This page executes the tester agent, tracks each retry, and renders the full QA output without changing the underlying backend flow.
+            </p>
+          </div>
+          <div class="hero-side">
+            <div class="hero-side-card">
+              <div class="section-kicker">Live Metrics</div>
+              <div class="hero-stats" id="metrics">
+                <div class="metric">
+                  <div class="metric-label">Run ID</div>
+                  <strong>waiting</strong>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Iterations</div>
+                  <strong>0</strong>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">Tests</div>
+                  <strong>0</strong>
+                </div>
+                <div class="metric">
+                  <div class="metric-label">AI Model</div>
+                  <strong>waiting</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="layout mission-layout">
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Run controls</div>
+              <h2>Mission launcher</h2>
+            </div>
+            <div class="panel-note">Adjust the repository path, retry count, and model before starting the tester agent.</div>
+          </div>
+          <form class="stack" id="orchestrate-form">
+            <label>
+              Repository path
+              <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
+            </label>
+            <label>
+              Max retries
+              <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />
+            </label>
+            <label>
+              AI test model
+              <select id="model_name" name="model_name">
+                <option value="">Loading models...</option>
+              </select>
+            </label>
+            <div class="actions">
+              <button class="button" id="run-button" type="submit">Launch tester agent</button>
+              <a class="button secondary link-button" href="/">Back to upload</a>
+              <button class="button secondary" id="sample-button" type="button">Use sample repo</button>
+              <button class="button secondary" id="report-button" type="button">Reload report</button>
+            </div>
+          </form>
+          <div class="control-footer">
+            <div class="status-pill idle" id="run-status">Idle</div>
+            <div class="control-hint" id="model-hint">AI model status loads after sign-in.</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Agent activity</div>
+              <h2>Tester agent timeline</h2>
+            </div>
+            <div class="panel-note">Each iteration shows what the agent did, what happened, and why it changed course.</div>
+          </div>
+          <div class="timeline" id="timeline">
+            <div class="empty">Run the orchestrator to see live report data.</div>
+          </div>
+          <div class="loading-indicator" id="loading-indicator" aria-hidden="true">
+            <span class="spinner"></span>
+            <span>Running orchestration...</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="insight-shell">
+        <div class="panel" id="summary">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Agent brief</div>
+              <h2>Agent assessment</h2>
+            </div>
+            <div class="panel-note">What the tester agent understood, generated, and decided.</div>
+          </div>
+          <div class="empty">The tester agent assessment appears here after a run.</div>
+        </div>
+        <div class="panel" id="logs">
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Agent output</div>
+              <h2>Execution logs</h2>
+            </div>
+            <div class="panel-note">Real stdout and stderr captured while the agent executed tests.</div>
+          </div>
+          <div class="empty">stdout and stderr will appear after a run.</div>
+        </div>
+      </section>
+
+      <section class="panel" id="json-output">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Artifacts</div>
+            <h2>Structured report</h2>
+          </div>
+          <div class="panel-note">Full JSON payload for debugging and demos.</div>
+        </div>
+        <div class="empty">The full JSON report will render here.</div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <div class="section-kicker">Agent history</div>
+            <h2>Saved runs</h2>
+          </div>
+          <div class="panel-note">Click any previous run to load it back into this workspace.</div>
+        </div>
+        <div class="run-list" id="recent-runs">
+          <div class="empty">No completed runs yet.</div>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/app.js"></script>
+    <script src="/static/session.js"></script>
+  </body>
+</html>

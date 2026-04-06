@@ -1,3 +1,5 @@
+const STORAGE_KEY = "ai-test-engineering-mission";
+
 const state = {
   runId: null,
   latestReport: null,
@@ -39,6 +41,20 @@ const modelState = {
   options: [],
   selected: "",
 };
+
+function readStoredMission() {
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredMission(partial) {
+  const nextValue = { ...readStoredMission(), ...partial };
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextValue));
+}
 
 function escapeHtml(value) {
   return String(value).replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
@@ -134,6 +150,9 @@ function getModelDisplay(provider, model) {
 }
 
 function setMetrics(report) {
+  if (!els.metrics) {
+    return;
+  }
   const execution = report.execution_history.at(-1);
   const latestGeneration = report.generation_history.at(-1);
   const languageSummary = report.analysis.detected_languages.length > 0 ? report.analysis.detected_languages.join(", ") : "unknown";
@@ -162,6 +181,9 @@ function setMetrics(report) {
 }
 
 function setTimeline(report) {
+  if (!els.timeline) {
+    return;
+  }
   const phaseLabels = ["Scout + Builder", "Runner", "Debugger"];
   const history = report.execution_history
     .map((execution, index) => {
@@ -182,6 +204,9 @@ function setTimeline(report) {
 }
 
 function setSummary(report) {
+  if (!els.summary) {
+    return;
+  }
   const generated = report.generation_history.at(-1);
   const execution = report.execution_history.at(-1);
   const moduleCount = report.analysis.summary?.total_modules ?? report.analysis.modules.length;
@@ -311,6 +336,9 @@ function streamLogLines(container, lines) {
 }
 
 function setLogs(report) {
+  if (!els.logs) {
+    return;
+  }
   const execution = report.execution_history.at(-1);
   if (!execution) {
     els.logs.innerHTML = `<div class="empty">Execution logs will appear here.</div>`;
@@ -341,6 +369,9 @@ function setLogs(report) {
 }
 
 function setJson(report) {
+  if (!els.json) {
+    return;
+  }
   els.json.innerHTML = `
     <div class="json-card">
       <h3>Structured Report</h3>
@@ -352,6 +383,7 @@ function setJson(report) {
 function renderReport(report) {
   state.runId = report.run_id;
   state.latestReport = report;
+  writeStoredMission({ run_id: report.run_id });
   setStatus("Completed", "completed");
   setMetrics(report);
   setTimeline(report);
@@ -363,16 +395,19 @@ function renderReport(report) {
 
 async function runOrchestration(event) {
   event.preventDefault();
-  els.runButton.disabled = true;
+  if (els.runButton) {
+    els.runButton.disabled = true;
+  }
   setLoading(true);
   setStatus("Running orchestration...", "running");
 
   const payload = {
-    repository_path: els.repositoryPath.value.trim(),
-    max_retries: Number(els.maxRetries.value),
+    repository_path: els.repositoryPath?.value.trim(),
+    max_retries: Number(els.maxRetries?.value),
     model: els.modelName?.value || null,
     upload_id: state.uploadId,
   };
+  writeStoredMission(payload);
 
   try {
     const response = await fetch("/orchestrate", {
@@ -404,11 +439,16 @@ async function runOrchestration(event) {
     `;
   } finally {
     setLoading(false);
-    els.runButton.disabled = false;
+    if (els.runButton) {
+      els.runButton.disabled = false;
+    }
   }
 }
 
 async function uploadArchive() {
+  if (!els.repoArchive) {
+    return;
+  }
   const files = Array.from(els.repoArchive.files || []);
   if (files.length === 0) {
     setStatus("Choose a file first", "error");
@@ -444,6 +484,12 @@ async function uploadArchive() {
     }
     els.repositoryPath.value = data.repository_path;
     state.uploadId = data.upload_id || null;
+    writeStoredMission({
+      repository_path: data.repository_path,
+      upload_id: state.uploadId,
+      max_retries: Number(els.maxRetries?.value || 2),
+      model: els.modelName?.value || "heuristic",
+    });
     if (els.repoArchiveName) {
       els.repoArchiveName.textContent = `${getSelectedUploadLabel(files)} ready`;
     }
@@ -464,6 +510,9 @@ async function uploadArchive() {
 }
 
 function handleArchiveSelection() {
+  if (!els.repoArchive) {
+    return;
+  }
   const files = Array.from(els.repoArchive.files || []);
   if (!els.repoArchiveName) {
     return;
@@ -493,6 +542,9 @@ async function loadLatestReport() {
 }
 
 async function loadRecentRuns() {
+  if (!els.recentRuns) {
+    return;
+  }
   const response = await fetch("/runs");
   const raw = await response.text();
   let data = [];
@@ -575,7 +627,8 @@ function renderModelOptions(models) {
   }
 
   modelState.options = models;
-  const selected = modelState.selected || systemState.ai_model || "heuristic";
+  const stored = readStoredMission();
+  const selected = modelState.selected || stored.model || systemState.ai_model || "heuristic";
   els.modelName.innerHTML = models
     .map((model) => {
       const disabled = model.provider === "openai" && !model.available ? " disabled" : "";
@@ -618,6 +671,7 @@ async function loadAvailableModels() {
 if (els.modelName) {
   els.modelName.addEventListener("change", () => {
     modelState.selected = els.modelName.value;
+    writeStoredMission({ model: modelState.selected });
     const selectedModel = modelState.options.find((item) => item.id === modelState.selected);
     if (selectedModel && els.modelHint) {
       els.modelHint.textContent = selectedModel.description;
@@ -625,36 +679,72 @@ if (els.modelName) {
   });
 }
 
-els.form.addEventListener("submit", runOrchestration);
-els.repoArchive.addEventListener("change", handleArchiveSelection);
-els.sampleButton.addEventListener("click", async () => {
-  try {
-    els.repositoryPath.value = await ensureSamplePath();
-    state.uploadId = null;
-    setStatus("Sample repository ready");
-  } catch (error) {
-    setStatus("ERROR", "error");
-    setUploadFeedback(error.message || "Sample repository is unavailable.", "error");
-  }
-});
-els.reportButton.addEventListener("click", async () => {
-  try {
-    await loadLatestReport();
-  } catch (error) {
-    setStatus("ERROR", "error");
-  }
-});
-
-setStatus("Idle", "idle");
-ensureSamplePath()
-  .then((repositoryPath) => {
-    els.repositoryPath.value = repositoryPath;
-  })
-  .catch(() => {
-    if (els.modelHint) {
-      els.modelHint.textContent = "Sample repository is unavailable in this environment. Upload a project and launch the tester agent manually.";
+if (els.form) {
+  els.form.addEventListener("submit", runOrchestration);
+}
+if (els.repoArchive) {
+  els.repoArchive.addEventListener("change", handleArchiveSelection);
+}
+if (els.sampleButton) {
+  els.sampleButton.addEventListener("click", async () => {
+    try {
+      const repositoryPath = await ensureSamplePath();
+      if (els.repositoryPath) {
+        els.repositoryPath.value = repositoryPath;
+      }
+      state.uploadId = null;
+      writeStoredMission({
+        repository_path: repositoryPath,
+        upload_id: null,
+        max_retries: Number(els.maxRetries?.value || 2),
+        model: els.modelName?.value || "heuristic",
+      });
+      setStatus("Sample repository ready");
+    } catch (error) {
+      setStatus("ERROR", "error");
+      setUploadFeedback(error.message || "Sample repository is unavailable.", "error");
     }
   });
+}
+if (els.reportButton) {
+  els.reportButton.addEventListener("click", async () => {
+    try {
+      await loadLatestReport();
+    } catch (error) {
+      setStatus("ERROR", "error");
+    }
+  });
+}
+
+function applyStoredMission() {
+  const stored = readStoredMission();
+  if (stored.repository_path && els.repositoryPath) {
+    els.repositoryPath.value = stored.repository_path;
+  }
+  if (typeof stored.max_retries === "number" && els.maxRetries) {
+    els.maxRetries.value = String(stored.max_retries);
+  }
+  if (stored.upload_id) {
+    state.uploadId = stored.upload_id;
+  }
+  if (stored.run_id) {
+    state.runId = stored.run_id;
+  }
+}
+
+setStatus("Idle", "idle");
+applyStoredMission();
+if (els.repositoryPath && !els.repositoryPath.value.trim()) {
+  ensureSamplePath()
+    .then((repositoryPath) => {
+      els.repositoryPath.value = repositoryPath;
+    })
+    .catch(() => {
+      if (els.modelHint) {
+        els.modelHint.textContent = "Sample repository is unavailable in this environment. Upload a project and launch the tester agent manually.";
+      }
+    });
+}
 loadSystemStatus();
 loadAvailableModels();
 loadRecentRuns();

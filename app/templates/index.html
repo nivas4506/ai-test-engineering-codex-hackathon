@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>AI Test Engineering</title>
+    <title>AI Test Engineering Upload</title>
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
@@ -16,7 +16,8 @@
           <span>AI Test Engineering</span>
         </a>
         <nav class="navlinks">
-          <a class="active" href="/">Overview</a>
+          <a class="active" href="/">Upload</a>
+          <a href="/run">Run</a>
           <a href="/agents">How It Works</a>
           <a href="/playbooks">What To Do</a>
           <a href="/reports">Results</a>
@@ -30,36 +31,40 @@
 
       <section class="hero">
         <div class="hero-topline">
-          <div class="badge">Autonomous tester agent</div>
-          <div class="hero-chip" id="model-chip">Planner + Generator + Runner + Debugger</div>
+          <div class="badge">Mission intake</div>
+          <div class="hero-chip" id="model-chip">Upload -> Run -> Report</div>
         </div>
         <div class="hero-grid">
           <div class="hero-copy">
-            <div class="eyebrow">Agentic quality engineering</div>
-            <h1>Your tester agent for real repositories</h1>
+            <div class="eyebrow">Tester agent workspace</div>
+            <h1>Start by loading the project</h1>
             <p>
-              Give the agent a repository, let it study the project, create tests, run them, retry safely, and return a clear testing verdict.
+              Upload a repository, point to a local path, or load the sample project. This page prepares the project context, then hands the mission to the run workspace.
             </p>
           </div>
           <div class="hero-side">
             <div class="hero-side-card">
-              <div class="section-kicker">Live Metrics</div>
-              <div class="hero-stats" id="metrics">
+              <div class="section-kicker">Flow</div>
+              <div class="hero-stats">
                 <div class="metric">
-                  <div class="metric-label">Run ID</div>
-                  <strong>waiting</strong>
+                  <div class="metric-label">Step 1</div>
+                  <strong>Upload</strong>
+                  <div class="metric-meta">Choose folder, archive, or files</div>
                 </div>
                 <div class="metric">
-                  <div class="metric-label">Iterations</div>
-                  <strong>0</strong>
+                  <div class="metric-label">Step 2</div>
+                  <strong>Run</strong>
+                  <div class="metric-meta">Launch the tester agent</div>
                 </div>
                 <div class="metric">
-                  <div class="metric-label">Tests</div>
-                  <strong>0</strong>
+                  <div class="metric-label">Step 3</div>
+                  <strong>Report</strong>
+                  <div class="metric-meta">Inspect bugs, fixes, and coverage</div>
                 </div>
                 <div class="metric">
                   <div class="metric-label">AI Model</div>
-                  <strong>waiting</strong>
+                  <strong id="upload-model-name">Loading</strong>
+                  <div class="metric-meta" id="upload-model-meta">Model status</div>
                 </div>
               </div>
             </div>
@@ -67,54 +72,34 @@
         </div>
       </section>
 
-      <section class="card-grid four-up capability-grid">
+      <section class="card-grid three-up">
         <article class="panel step-mini-card">
-          <div class="section-kicker">Step 1</div>
-          <h3>Codebase analysis</h3>
-          <p>Scan modules, functions, classes, endpoints, and internal dependencies.</p>
+          <div class="section-kicker">Upload</div>
+          <h3>Accept real project files</h3>
+          <p>Use local paths, repositories, archives, or mixed source files without changing your project structure.</p>
         </article>
         <article class="panel step-mini-card">
-          <div class="section-kicker">Step 2</div>
-          <h3>Test generation</h3>
-          <p>Create unit, integration, edge-case, and boundary-oriented tests in isolation.</p>
+          <div class="section-kicker">Prepare</div>
+          <h3>Set the mission</h3>
+          <p>Choose a model and retry strategy before handing the project to the run workspace.</p>
         </article>
         <article class="panel step-mini-card">
-          <div class="section-kicker">Step 3</div>
-          <h3>Test execution</h3>
-          <p>Run the generated suite and record real pass/fail output from the runner.</p>
-        </article>
-        <article class="panel step-mini-card">
-          <div class="section-kicker">Step 4</div>
-          <h3>Bug detection</h3>
-          <p>Capture failure details, classify severity, and explain likely root cause.</p>
-        </article>
-        <article class="panel step-mini-card">
-          <div class="section-kicker">Step 5</div>
-          <h3>Fix suggestions</h3>
-          <p>Produce minimal patch-style guidance without changing core business logic.</p>
-        </article>
-        <article class="panel step-mini-card">
-          <div class="section-kicker">Step 6</div>
-          <h3>Coverage analysis</h3>
-          <p>Estimate line coverage and list the missing edge cases still worth testing.</p>
-        </article>
-        <article class="panel step-mini-card">
-          <div class="section-kicker">Step 7</div>
-          <h3>Continuous improvement</h3>
-          <p>Retry safely, improve weak tests, and recommend CI, security, and performance checks.</p>
+          <div class="section-kicker">Continue</div>
+          <h3>Move into execution</h3>
+          <p>The run page picks up the selected repository and starts the tester agent without re-uploading.</p>
         </article>
       </section>
 
-      <section class="layout">
+      <section class="layout mission-layout">
         <div class="panel">
-        <div class="panel-head">
-          <div>
-            <div class="section-kicker">Mission Setup</div>
-            <h2>Tester Agent Mission</h2>
+          <div class="panel-head">
+            <div>
+              <div class="section-kicker">Upload</div>
+              <h2>Project intake</h2>
+            </div>
+            <div class="panel-note">Prepare the repository path and upload state before moving to the run page.</div>
           </div>
-          <div class="panel-note">Point the agent at a project and tell it how hard to push.</div>
-        </div>
-        <form class="stack" id="orchestrate-form">
+          <form class="stack" id="mission-form">
             <label>
               Repository path
               <input id="repository_path" name="repository_path" placeholder="C:\path\to\repo" required />
@@ -122,7 +107,7 @@
             <div class="upload-card">
               <div class="upload-copy">
                 <div class="section-kicker">Upload</div>
-                <p class="body-copy">Upload a repository folder, an archive, or source files from most programming languages. Python, JavaScript, and TypeScript run end-to-end today.</p>
+                <p class="body-copy">Upload a repository folder, archive, or source files from most programming languages. Supported testing is strongest today for Python, JavaScript, and TypeScript, with generic smoke coverage for wider project shapes.</p>
               </div>
               <div class="upload-actions">
                 <div class="upload-picker">
@@ -130,7 +115,7 @@
                   <label class="button secondary file-picker" for="repo_archive">Choose folder, archive, or file</label>
                   <span class="file-meta" id="repo-archive-name">No file selected</span>
                 </div>
-                <div class="upload-feedback" id="upload-feedback">The upload starts as soon as you choose a folder, archive, or file.</div>
+                <div class="upload-feedback" id="upload-feedback">Choose a folder, archive, or file and it will upload automatically.</div>
               </div>
             </div>
             <label>
@@ -144,76 +129,56 @@
               </select>
             </label>
             <div class="actions">
-              <button class="button" id="run-button" type="submit">Launch tester agent</button>
+              <button class="button" id="continue-button" type="submit">Continue to run page</button>
               <button class="button secondary" id="sample-button" type="button">Use sample repo</button>
-              <button class="button secondary" id="report-button" type="button">Reload report</button>
             </div>
           </form>
           <div class="control-footer">
-            <div class="status-pill idle" id="run-status">Idle</div>
-            <div class="control-hint" id="model-hint">AI model status loads after sign-in.</div>
+            <div class="status-pill idle" id="upload-status">Idle</div>
+            <div class="control-hint" id="model-hint">Model and upload status load here.</div>
           </div>
         </div>
 
         <div class="panel">
-        <div class="panel-head">
-          <div>
-            <div class="section-kicker">Agent Activity</div>
-            <h2>Tester Agent Timeline</h2>
-          </div>
-          <div class="panel-note">Each attempt shows what the agent did, what happened, and why it changed course.</div>
-        </div>
-        <div class="timeline" id="timeline">
-          <div class="empty">Run the orchestrator to see live report data.</div>
-        </div>
-          <div class="loading-indicator" id="loading-indicator" aria-hidden="true">
-            <span class="spinner"></span>
-            <span>Running orchestration...</span>
-          </div>
-        </div>
-      </section>
-
-      <section class="insight-shell">
-        <div class="panel" id="summary">
-        <div class="panel-head">
-          <div>
-            <div class="section-kicker">Agent Brief</div>
-            <h2>Agent Assessment</h2>
-          </div>
-          <div class="panel-note">What the tester agent understood, generated, and decided.</div>
-        </div>
-          <div class="empty">The tester agent assessment appears here after a run.</div>
-        </div>
-        <div class="panel" id="logs">
           <div class="panel-head">
             <div>
-              <div class="section-kicker">Agent Output</div>
-              <h2>Execution Logs</h2>
+              <div class="section-kicker">Mission snapshot</div>
+              <h2>What is ready for the run page</h2>
             </div>
-            <div class="panel-note">Real stdout and stderr captured while the agent executed tests.</div>
+            <div class="panel-note">This page only prepares the mission. Execution and reports happen on the run and results pages.</div>
           </div>
-          <div class="empty">stdout and stderr will appear after a run.</div>
-        </div>
-      </section>
-
-      <section class="panel" id="json-output">
-        <div class="panel-head">
-          <div>
-            <div class="section-kicker">Artifacts</div>
-            <h2>Structured Report</h2>
+          <div class="card-grid two-up mission-card-grid" id="mission-summary">
+            <article class="agent-brief-card">
+              <span>Repository</span>
+              <p>No repository selected yet.</p>
+            </article>
+            <article class="agent-brief-card">
+              <span>Upload</span>
+              <p>Waiting for a file, folder, or archive.</p>
+            </article>
+            <article class="agent-brief-card">
+              <span>Model</span>
+              <p>Loading available testing models.</p>
+            </article>
+            <article class="agent-brief-card">
+              <span>Next</span>
+              <p>Continue to the run page when the mission is ready.</p>
+            </article>
           </div>
-          <div class="panel-note">Full JSON payload for debugging and demos.</div>
+          <div class="loading-indicator" id="loading-indicator" aria-hidden="true">
+            <span class="spinner"></span>
+            <span>Uploading repository...</span>
+          </div>
         </div>
-        <div class="empty">The full JSON report will render here.</div>
       </section>
 
       <section class="panel">
         <div class="panel-head">
           <div>
-            <div class="section-kicker">Agent History</div>
-            <h2>Saved runs</h2>
+            <div class="section-kicker">Recent runs</div>
+            <h2>Go straight to a previous result</h2>
           </div>
-          <div class="panel-note">Click any previous agent run to load it back into this page.</div>
+          <div class="panel-note">If the project was already tested, open the result directly from here.</div>
         </div>
         <div class="run-list" id="recent-runs">
           <div class="empty">No completed runs yet.</div>
@@ -221,7 +186,7 @@
       </section>
     </main>
 
-    <script src="/static/app.js"></script>
+    <script src="/static/upload.js"></script>
     <script src="/static/session.js"></script>
   </body>
 </html>

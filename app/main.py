@@ -41,6 +41,14 @@ def index(request: Request):
     return render_template("index.html")
 
 
+@app.get("/run", response_class=HTMLResponse)
+def run_page(request: Request):
+    redirect = require_authenticated_page(request)
+    if redirect is not None:
+        return redirect
+    return render_template("run.html")
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     if resolve_current_user(request) is not None:
