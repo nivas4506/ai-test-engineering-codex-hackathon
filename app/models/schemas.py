@@ -33,6 +33,10 @@ class OrchestrateRequest(BaseModel):
     testing_objective: str | None = None
 
 
+class UploadGithubRequest(BaseModel):
+    repository_url: str = Field(min_length=1)
+
+
 class SignUpRequest(BaseModel):
     email: str
     full_name: str
@@ -290,6 +294,18 @@ class FinalStructuredReport(BaseModel):
     bugs: list[FinalBugReport] = Field(default_factory=list)
 
 
+class BrowserProbeResult(BaseModel):
+    status: Literal["passed", "error"]
+    url: str
+    final_url: str | None = None
+    title: str | None = None
+    forms_detected: int = 0
+    buttons_detected: int = 0
+    links_detected: int = 0
+    notes: list[str] = Field(default_factory=list)
+    error_message: str | None = None
+
+
 class RunReport(BaseModel):
     architecture: Literal["multi_agent"] = "multi_agent"
     run_id: str
@@ -311,6 +327,7 @@ class RunReport(BaseModel):
     execution_steps: list[ExecutionStep] = Field(default_factory=list)
     observations: list[Observation] = Field(default_factory=list)
     final_structured_report: FinalStructuredReport = Field(default_factory=FinalStructuredReport)
+    browser_probe: BrowserProbeResult | None = None
     artifact_paths: dict[str, Any]
 
 

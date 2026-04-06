@@ -21,6 +21,8 @@ const els = {
   form: document.getElementById("mission-form"),
   repositoryPath: document.getElementById("repository_path"),
   repoArchive: document.getElementById("repo_archive"),
+  githubRepositoryUrl: document.getElementById("github_repository_url"),
+  githubImportButton: document.getElementById("github-import-button"),
   maxRetries: document.getElementById("max_retries"),
   modelName: document.getElementById("model_name"),
   continueButton: document.getElementById("continue-button"),
@@ -31,6 +33,7 @@ const els = {
   modelHint: document.getElementById("model-hint"),
   repoArchiveName: document.getElementById("repo-archive-name"),
   uploadFeedback: document.getElementById("upload-feedback"),
+  githubUploadFeedback: document.getElementById("github-upload-feedback"),
   missionSummary: document.getElementById("mission-summary"),
   recentRuns: document.getElementById("recent-runs"),
   uploadModelName: document.getElementById("upload-model-name"),
@@ -129,6 +132,14 @@ function setUploadFeedback(message, tone = "") {
   }
   els.uploadFeedback.textContent = message;
   els.uploadFeedback.className = `upload-feedback${tone ? ` is-${tone}` : ""}`;
+}
+
+function setGithubUploadFeedback(message, tone = "") {
+  if (!els.githubUploadFeedback) {
+    return;
+  }
+  els.githubUploadFeedback.textContent = message;
+  els.githubUploadFeedback.className = `upload-feedback${tone ? ` is-${tone}` : ""}`;
 }
 
 function getSelectedUploadLabel(files) {
@@ -246,6 +257,51 @@ async function uploadArchive() {
   } catch (error) {
     setStatus("Upload error", "error");
     setUploadFeedback(error.message || "Upload failed.", "error");
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function importGithubRepository() {
+  const repositoryUrl = els.githubRepositoryUrl?.value.trim() || "";
+  if (!repositoryUrl) {
+    setGithubUploadFeedback("Paste a GitHub repository URL first.", "error");
+    setStatus("Missing GitHub URL", "error");
+    return;
+  }
+
+  setLoading(true);
+  setStatus("Importing GitHub repository...", "running");
+  setGithubUploadFeedback("Downloading repository from GitHub...", "busy");
+
+  try {
+    const response = await fetch("/upload/github", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repository_url: repositoryUrl }),
+    });
+    const raw = await response.text();
+    const data = raw ? JSON.parse(raw) : {};
+    if (!response.ok) {
+      throw new Error((typeof data?.detail === "string" && data.detail) || raw || "GitHub import failed.");
+    }
+
+    state.uploadId = data.upload_id || null;
+    if (els.repositoryPath) {
+      els.repositoryPath.value = "";
+    }
+    writeStoredMission({
+      repository_path: "",
+      upload_id: state.uploadId,
+      max_retries: Number(els.maxRetries?.value || 2),
+      model: els.modelName?.value || "heuristic",
+    });
+    setGithubUploadFeedback(`GitHub repository imported. Bundle ${data.upload_id} is ready for the run page.`, "success");
+    setStatus("GitHub repo ready", "completed");
+    updateMissionSummary();
+  } catch (error) {
+    setGithubUploadFeedback(error.message || "GitHub import failed.", "error");
+    setStatus("GitHub import error", "error");
   } finally {
     setLoading(false);
   }
@@ -439,6 +495,9 @@ if (els.modelName) {
     writeStoredMission({ model: els.modelName.value });
     updateMissionSummary();
   });
+}
+if (els.githubImportButton) {
+  els.githubImportButton.addEventListener("click", importGithubRepository);
 }
 
 setStatus("Idle", "idle");

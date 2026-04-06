@@ -118,6 +118,19 @@
                 <div class="upload-feedback" id="upload-feedback">Choose a folder, archive, or file and it will upload automatically.</div>
               </div>
             </div>
+            <div class="upload-card">
+              <div class="upload-copy">
+                <div class="section-kicker">GitHub</div>
+                <p class="body-copy">Import a public GitHub repository directly. Paste the repository URL and the tester agent will download the project bundle for the run page.</p>
+              </div>
+              <div class="upload-actions">
+                <div class="github-import">
+                  <input id="github_repository_url" name="github_repository_url" placeholder="https://github.com/owner/repo" />
+                  <button class="button secondary" id="github-import-button" type="button">Import GitHub repo</button>
+                </div>
+                <div class="upload-feedback" id="github-upload-feedback">Paste a public GitHub repository URL to import it directly.</div>
+              </div>
+            </div>
             <label>
               Max retries
               <input id="max_retries" name="max_retries" type="number" min="0" max="5" value="2" required />

@@ -3,8 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 
 from app.db.repository import RunRepository
-from app.models.schemas import CoverageReport, ImprovementReport, RunReport
+from app.models.schemas import AgentTraceEntry, CoverageReport, ImprovementReport, Observation, RunReport
 from app.services.agents.controller import MultiAgentController
+from app.services.selenium_probe import SeleniumProbe
 from app.services.planner import PlannerService
 from app.services.repository_analyzer import RepositoryAnalyzer
 from app.utils.files import create_run_directory, snapshot_repository_metadata, write_json
@@ -19,6 +20,7 @@ class OrchestratorService:
         self.executor = self.controller.executor_agent.executor
         self.debugger = self.controller.critic_agent.debugger
         self.run_repository = RunRepository()
+        self.selenium_probe = SeleniumProbe()
 
     def analyze(self, repository_path: str):
         return self.analyzer.analyze(repository_path)
@@ -66,6 +68,7 @@ class OrchestratorService:
             *multi_agent_output.agent_trace,
         ]
         agent_trace = [trace for trace in agent_trace if trace is not None]
+        browser_probe = self._run_browser_probe_if_needed(target_input, observations, agent_trace)
 
         latest_execution = execution_history[-1] if execution_history else None
         if latest_execution is None:
@@ -136,12 +139,62 @@ class OrchestratorService:
             execution_steps=multi_agent_output.planner_output.execution_steps,
             observations=observations,
             final_structured_report=final_structured_report,
+            browser_probe=browser_probe,
             artifact_paths=artifact_paths,
         )
+        if browser_probe is not None:
+            report.artifact_paths["browser_probe"] = str(
+                write_json(run_dir / "artifacts" / "browser_probe.json", browser_probe.model_dump())
+            )
         report_path = write_json(run_dir / "artifacts" / "final_report.json", report.model_dump())
         report.artifact_paths["final_report"] = str(report_path)
+        write_json(run_dir / "artifacts" / "final_report.json", report.model_dump())
         self.run_repository.upsert_run_report(report, max_retries=max_retries, user_id=user_id)
         return report
+
+    def _run_browser_probe_if_needed(self, target_input: str | None, observations: list[Observation], agent_trace: list[AgentTraceEntry]):
+        if not target_input or not target_input.strip().lower().startswith(("http://", "https://")):
+            return None
+
+        browser_probe = self.selenium_probe.probe(target_input.strip())
+        if browser_probe.status == "passed":
+            observations.append(
+                Observation(
+                    title="Selenium browser probe",
+                    detail=(
+                        f"Loaded {browser_probe.final_url or browser_probe.url} with title "
+                        f"{browser_probe.title or 'untitled'} and detected "
+                        f"{browser_probe.forms_detected} forms, {browser_probe.buttons_detected} buttons, "
+                        f"and {browser_probe.links_detected} links."
+                    ),
+                    status="pass",
+                )
+            )
+            agent_trace.append(
+                AgentTraceEntry(
+                    agent="executor",
+                    status="completed",
+                    summary="Executor completed a Selenium browser probe for the target URL.",
+                    details=browser_probe.notes,
+                )
+            )
+        else:
+            observations.append(
+                Observation(
+                    title="Selenium browser probe",
+                    detail=browser_probe.error_message or "Selenium probe could not run in this environment.",
+                    status="fail",
+                )
+            )
+            agent_trace.append(
+                AgentTraceEntry(
+                    agent="executor",
+                    status="failed",
+                    summary="Executor could not complete the Selenium browser probe.",
+                    details=browser_probe.notes + ([browser_probe.error_message] if browser_probe.error_message else []),
+                )
+            )
+        return browser_probe
 
     def _estimate_coverage(self, analysis, generation_history, execution_history) -> CoverageReport:
         total_modules = max(len(analysis.modules), 1)

@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from app.models.schemas import BrowserProbeResult
 from app.services.orchestrator import OrchestratorService
 
 
@@ -108,3 +109,43 @@ def test_orchestrator_runs_manifest_only_repository_smoke_tests(
     assert report.analysis.detected_languages == ["generic"]
     assert report.execution_history[-1].tests_collected is not None
     assert any(path.name == "test_package_json.py" for path in (temp_run_dir / "generated_tests").iterdir())
+
+
+@pytest.mark.integration
+def test_orchestrator_records_selenium_probe_for_target_url(
+    monkeypatch: pytest.MonkeyPatch,
+    simple_python_repo: Path,
+    temp_run_dir: Path,
+) -> None:
+    monkeypatch.setattr(
+        "app.services.orchestrator.create_run_directory",
+        lambda: ("seleniumrun", temp_run_dir),
+    )
+
+    service = OrchestratorService()
+    service.generator.openai_writer._client = None
+    monkeypatch.setattr(
+        service.selenium_probe,
+        "probe",
+        lambda url: BrowserProbeResult(
+            status="passed",
+            url=url,
+            final_url=url,
+            title="Demo App",
+            forms_detected=1,
+            buttons_detected=2,
+            links_detected=3,
+            notes=["Loaded demo app."],
+        ),
+    )
+
+    report = service.orchestrate(
+        str(simple_python_repo),
+        max_retries=1,
+        user_id=None,
+        target_input="https://example.com",
+    )
+
+    assert report.browser_probe is not None
+    assert report.browser_probe.status == "passed"
+    assert any(observation.title == "Selenium browser probe" for observation in report.observations)

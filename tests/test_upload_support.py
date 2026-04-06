@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
+from app.services.github_importer import GithubImportResult, GithubRepositoryImporter
 from app.services.repository_analyzer import RepositoryAnalyzer
 from app.services.google_auth import GoogleIdentity
 from app.utils.files import save_uploaded_bundle, save_uploaded_input
@@ -19,6 +20,13 @@ def test_upload_accepts_single_java_file() -> None:
     assert upload_id
     assert repository_path.is_dir()
     assert (repository_path / "HelloWorld.java").exists()
+
+
+def test_github_importer_parses_repository_url() -> None:
+    owner, repo = GithubRepositoryImporter()._parse_repository_url("https://github.com/openai/openai-python")
+
+    assert owner == "openai"
+    assert repo == "openai-python"
 
 
 def test_upload_accepts_single_package_manifest() -> None:
@@ -167,3 +175,36 @@ def test_orchestrate_accepts_upload_id_without_repository_path(monkeypatch: pyte
     report = orchestrate_response.json()
     assert report["status"] == "passed"
     assert report["repository_path"]
+
+
+def test_upload_github_repository_route(monkeypatch: pytest.MonkeyPatch) -> None:
+    import app.api.routes as routes
+
+    client = TestClient(app)
+    monkeypatch.setattr(
+        routes,
+        "verify_google_credential",
+        lambda credential: GoogleIdentity(
+            email=f"github-import-{uuid4().hex[:8]}@example.com",
+            full_name="Github Import User",
+            google_sub=f"github-import-{credential}",
+        ),
+    )
+    monkeypatch.setattr(
+        routes.github_importer,
+        "import_repository",
+        lambda repository_url: GithubImportResult(
+            upload_id="github123456",
+            repository_path="C:/temp/github123456/repo",
+            original_filename="demo-main.zip",
+        ),
+    )
+    monkeypatch.setattr(routes, "package_repository_bytes", lambda path: b"archive")
+
+    login_response = client.post("/auth/google", json={"credential": "github-import-credential"})
+    assert login_response.status_code == 200
+
+    response = client.post("/upload/github", json={"repository_url": "https://github.com/openai/openai-python"})
+
+    assert response.status_code == 200
+    assert response.json()["upload_id"] == "github123456"

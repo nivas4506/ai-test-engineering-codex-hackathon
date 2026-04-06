@@ -30,6 +30,7 @@ from app.models.schemas import (
     RunTestsRequest,
     SignUpRequest,
     SystemStatusResponse,
+    UploadGithubRequest,
     UserProfileStats,
     UserProfileSummaryResponse,
     UpdateRunRequest,
@@ -37,6 +38,7 @@ from app.models.schemas import (
 )
 from app.services.auth import create_access_token, get_current_user, verify_password
 from app.services.google_auth import google_sign_in_enabled, verify_google_credential
+from app.services.github_importer import GithubRepositoryImporter
 from app.services.orchestrator import OrchestratorService
 from app.services.openai_test_writer import OpenAITestWriter
 from app.utils.files import (
@@ -57,6 +59,7 @@ run_repository = RunRepository()
 auth_repository = AuthRepository()
 upload_store = UploadRepository()
 openai_writer = OpenAITestWriter()
+github_importer = GithubRepositoryImporter()
 
 
 def _resolve_repository_path(repository_path: str | None, upload_id: str | None, user_id: int | None) -> str:
@@ -278,6 +281,27 @@ async def upload_repository(
 
     original_filename = uploads[0].filename or "uploaded-content"
     return UploadResponse(upload_id=upload_id, repository_path=str(repository_path), original_filename=original_filename)
+
+
+@router.post("/upload/github", response_model=UploadResponse)
+def upload_github_repository(request: UploadGithubRequest, current_user=Depends(get_current_user)):
+    try:
+        imported = github_importer.import_repository(request.repository_url)
+        upload_store.upsert_upload(
+            upload_id=imported.upload_id,
+            original_filename=imported.original_filename,
+            bundle_bytes=package_repository_bytes(Path(imported.repository_path)),
+            owner_user_id=current_user.id,
+        )
+        return UploadResponse(
+            upload_id=imported.upload_id,
+            repository_path=imported.repository_path,
+            original_filename=imported.original_filename,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail="Failed to import GitHub repository.") from exc
 
 
 @router.post("/analyze")

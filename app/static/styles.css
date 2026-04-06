@@ -169,6 +169,13 @@ body::after {
   align-items: stretch;
 }
 
+.github-import {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
 .upload-picker {
   display: flex;
   align-items: center;
@@ -1082,6 +1089,10 @@ pre {
 
   .upload-picker {
     align-items: flex-start;
+  }
+
+  .github-import {
+    grid-template-columns: 1fr;
   }
 
   .auth-flow-grid {
