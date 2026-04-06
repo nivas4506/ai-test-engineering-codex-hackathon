@@ -175,6 +175,8 @@ Optional app secrets:
 - `.github/workflows/vercel-production.yml`: tests, builds, and deploys production on `main`
 - `.github/workflows/k8s-deploy.yml`: left as manual-only so it no longer conflicts with Vercel
 
+## Demo Video
+https://github.com/user-attachments/assets/6496206c-f654-42d1-8dbd-268c217dd288
 ## Language Support
 
 - Python: analysis, test generation, and `pytest` execution
