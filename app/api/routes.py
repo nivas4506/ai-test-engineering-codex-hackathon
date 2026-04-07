@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from io import BytesIO
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Request, Response, UploadFile
+from fastapi.responses import StreamingResponse
 from fastapi.security import OAuth2PasswordRequestForm
 
 from app.core.config import (
@@ -259,28 +261,46 @@ async def upload_repository(
             first_upload = uploads[0]
             if not first_upload.filename:
                 raise HTTPException(status_code=400, detail="A file name is required for upload.")
-            content = await first_upload.read()
-            upload_id, repository_path = save_uploaded_input(first_upload.filename, content)
+            # Stream the file object directly instead of reading all into memory
+            upload_id, repository_path = save_uploaded_input(first_upload.filename, first_upload.file)
         else:
-            bundle_files: list[tuple[str, bytes]] = []
+            bundle_files: list[tuple[str, Any]] = []
             for upload in uploads:
                 if not upload.filename:
                     raise HTTPException(status_code=400, detail="Each uploaded file must have a name.")
-                bundle_files.append((upload.filename, await upload.read()))
+                bundle_files.append((upload.filename, upload.file))
             upload_id, repository_path = save_uploaded_bundle(bundle_files)
+        
+        # Zip and store in DB for persistence across stateless starts, but do it safely
+        bundle_bytes = package_repository_bytes(repository_path)
         upload_store.upsert_upload(
             upload_id=upload_id,
             original_filename=uploads[0].filename or "uploaded-content",
-            bundle_bytes=package_repository_bytes(repository_path),
+            bundle_bytes=bundle_bytes,
             owner_user_id=current_user.id,
         )
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:
-        raise HTTPException(status_code=500, detail="Failed to process upload.") from exc
+        import logging
+        logging.exception("Upload failed.")
+        raise HTTPException(status_code=500, detail=f"Failed to process upload: {str(exc)}") from exc
 
     original_filename = uploads[0].filename or "uploaded-content"
     return UploadResponse(upload_id=upload_id, repository_path=str(repository_path), original_filename=original_filename)
+
+
+@router.get("/download/{upload_id}")
+def download_repository(upload_id: str, current_user=Depends(get_current_user)):
+    stored_upload = upload_store.get_upload(upload_id, owner_user_id=current_user.id)
+    if stored_upload is None:
+        raise HTTPException(status_code=404, detail=f"Upload not found for upload_id={upload_id}")
+
+    return StreamingResponse(
+        BytesIO(stored_upload.bundle_bytes),
+        media_type="application/zip",
+        headers={"Content-Disposition": f"attachment; filename={stored_upload.bundle_name or 'repository.zip'}"}
+    )
 
 
 @router.post("/upload/github", response_model=UploadResponse)

@@ -4,12 +4,12 @@ import json
 import re
 import shutil
 import tarfile
-import uuid
 import zipfile
 from datetime import datetime
 from io import BytesIO
 from pathlib import Path
-from typing import Any
+from typing import Any, BinaryIO
+from uuid import uuid4
 
 from app.core.config import UPLOADS_DIR, WORKSPACE_DIR
 from app.models.schemas import RunListItem
@@ -115,7 +115,7 @@ def ensure_directory(path: Path) -> Path:
 
 
 def create_run_directory() -> tuple[str, Path]:
-    run_id = uuid.uuid4().hex[:12]
+    run_id = uuid4().hex[:12]
     run_dir = ensure_directory(WORKSPACE_DIR / run_id)
     ensure_directory(run_dir / "artifacts")
     ensure_directory(run_dir / "generated_tests")
@@ -164,30 +164,38 @@ def list_run_reports(limit: int = 20) -> list[RunListItem]:
         report_path = run_dir / "artifacts" / "final_report.json"
         if not report_path.exists():
             continue
-        report = read_json(report_path)
-        latest_execution = report.get("execution_history", [])
-        latest_test_count = latest_execution[-1].get("tests_collected") if latest_execution else None
-        items.append(
-            RunListItem(
-                run_id=report["run_id"],
-                repository_path=report["repository_path"],
-                status=report["status"],
-                iterations=report["iterations"],
-                created_at=datetime.fromisoformat(report["analysis"]["created_at"]),
-                latest_test_count=latest_test_count,
+        try:
+            report = read_json(report_path)
+            latest_execution = report.get("execution_history", [])
+            latest_test_count = latest_execution[-1].get("tests_collected") if latest_execution else None
+            items.append(
+                RunListItem(
+                    run_id=report["run_id"],
+                    repository_path=report["repository_path"],
+                    status=report["status"],
+                    iterations=report["iterations"],
+                    created_at=datetime.fromisoformat(report["analysis"]["created_at"]),
+                    latest_test_count=latest_test_count,
+                )
             )
-        )
+        except Exception:
+            continue
         if len(items) >= limit:
             break
     return items
 
 
-def save_uploaded_input(filename: str, content: bytes) -> tuple[str, Path]:
-    upload_id = uuid.uuid4().hex[:12]
+def save_uploaded_input(filename: str, content: bytes | BinaryIO) -> tuple[str, Path]:
+    upload_id = uuid4().hex[:12]
     upload_root = ensure_directory(UPLOADS_DIR / upload_id)
     archive_path = upload_root / filename
     ensure_directory(archive_path.parent)
-    archive_path.write_bytes(content)
+
+    if hasattr(content, "read"):
+        with archive_path.open("wb") as f:
+            shutil.copyfileobj(content, f)  # Stream to disk
+    else:
+        archive_path.write_bytes(content)
 
     extracted_dir = upload_root / "repo"
     ensure_directory(extracted_dir)
@@ -209,16 +217,23 @@ def save_uploaded_input(filename: str, content: bytes) -> tuple[str, Path]:
         return upload_id, normalized_root
 
     target_file = extracted_dir / Path(filename).name
-    target_file.write_bytes(content)
+    if hasattr(content, "seek"):
+        content.seek(0)
+    if hasattr(content, "read"):
+        with target_file.open("wb") as f:
+            shutil.copyfileobj(content, f)
+    else:
+        target_file.write_bytes(content)
+
     _validate_uploaded_repository(target_file)
     return upload_id, extracted_dir
 
 
-def save_uploaded_bundle(files: list[tuple[str, bytes]]) -> tuple[str, Path]:
+def save_uploaded_bundle(files: list[tuple[str, bytes | BinaryIO]]) -> tuple[str, Path]:
     if not files:
         raise ValueError("No files were uploaded.")
 
-    upload_id = uuid.uuid4().hex[:12]
+    upload_id = uuid4().hex[:12]
     upload_root = ensure_directory(UPLOADS_DIR / upload_id)
     repo_root = ensure_directory(upload_root / "repo")
 
@@ -226,7 +241,11 @@ def save_uploaded_bundle(files: list[tuple[str, bytes]]) -> tuple[str, Path]:
         relative_path = _safe_relative_path(relative_name)
         target_file = repo_root / relative_path
         ensure_directory(target_file.parent)
-        target_file.write_bytes(content)
+        if hasattr(content, "read"):
+            with target_file.open("wb") as f:
+                shutil.copyfileobj(content, f)
+        else:
+            target_file.write_bytes(content)
 
     _validate_uploaded_repository(repo_root)
     return upload_id, repo_root
@@ -248,10 +267,17 @@ def package_repository_bytes(path: Path) -> bytes:
 def restore_uploaded_repository(upload_id: str, bundle_bytes: bytes) -> Path:
     upload_root = ensure_directory(UPLOADS_DIR / upload_id)
     extracted_dir = upload_root / "repo"
-    if extracted_dir.exists():
-        shutil.rmtree(extracted_dir)
-    ensure_directory(extracted_dir)
 
+    # Check if already extracted and valid
+    if extracted_dir.exists() and any(extracted_dir.iterdir()):
+        try:
+            # Quick validation check
+            _validate_uploaded_repository(extracted_dir)
+            return extracted_dir
+        except (ValueError, FileNotFoundError):
+            shutil.rmtree(extracted_dir)
+
+    ensure_directory(extracted_dir)
     archive_buffer = BytesIO(bundle_bytes)
     with zipfile.ZipFile(archive_buffer) as archive:
         for member in archive.infolist():
@@ -297,7 +323,7 @@ def _extract_tar_archive(archive_path: Path, extracted_dir: Path) -> None:
 
 
 def _normalize_extracted_root(extracted_dir: Path) -> Path:
-    children = [child for child in extracted_dir.iterdir()]
+    children = [child for child in extracted_dir.iterdir() if child.name != "__MACOSX" and not child.name.startswith(".")]
     if len(children) == 1 and children[0].is_dir():
         return children[0]
     return extracted_dir
@@ -323,8 +349,19 @@ def _validate_uploaded_repository(path: Path) -> None:
     if not path.exists() or not path.is_dir():
         raise ValueError("Uploaded content could not be prepared as a repository.")
 
-    has_supported_project_files = any(is_supported_project_file(file_path) for file_path in path.rglob("*") if file_path.is_file())
-    if not has_supported_project_files:
+    # Optimized check to avoid full rglob on massive folders
+    found = False
+    for p in path.rglob("*"):
+        # Skip heavy directories to avoid performance issues
+        parts = set(p.parts)
+        if any(part in parts for part in {"venv", ".venv", "__pycache__", "node_modules", ".git", ".next", "dist", "build"}):
+            continue
+            
+        if p.is_file() and is_supported_project_file(p):
+            found = True
+            break
+            
+    if not found:
         raise ValueError(
             "No source code or project files were found in upload. Include a repository, archive, or project files from a programming language or framework."
         )

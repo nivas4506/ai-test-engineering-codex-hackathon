@@ -34,11 +34,16 @@ class RepositoryAnalyzer:
                 )
             modules = [self._summarize_file(repo_path.parent, repo_path)]
         else:
-            modules = [
-                self._summarize_file(repo_path, file_path)
-                for file_path in sorted(repo_path.rglob("*"))
-                if file_path.is_file() and self._is_supported_source(file_path) and not self._should_skip(file_path)
-            ]
+            modules = []
+            import os
+            for root, dirs, files in os.walk(repo_path):
+                # Efficiently skip heavy directories in-place
+                dirs[:] = [d for d in dirs if not any(token in d.lower() for token in {"venv", ".venv", "__pycache__", "node_modules", ".git", ".next", "dist", "build", "generated_tests"})]
+                
+                for filename in sorted(files):
+                    file_path = Path(root) / filename
+                    if self._is_supported_source(file_path):
+                        modules.append(self._summarize_file(repo_path, file_path))
 
         python_files = [module.file_path for module in modules if module.language == "python"]
         javascript_files = [module.file_path for module in modules if module.language == "javascript"]

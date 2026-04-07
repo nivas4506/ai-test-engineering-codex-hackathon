@@ -8,7 +8,9 @@ load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parents[2]
 IS_VERCEL = os.getenv("VERCEL") == "1"
-DEFAULT_WORKSPACE_ROOT = Path("/tmp/ai-test-engineering") if IS_VERCEL else BASE_DIR / "workspace"
+# When installed as a package, it's better to default the workspace to the current directory 
+# or a folder in the user's home directory to avoid writing to site-packages.
+DEFAULT_WORKSPACE_ROOT = Path("/tmp/ai-test-engineering") if IS_VERCEL else Path.cwd() / "workspace"
 WORKSPACE_ROOT = Path(os.getenv("WORKSPACE_ROOT", str(DEFAULT_WORKSPACE_ROOT)))
 WORKSPACE_DIR = WORKSPACE_ROOT / "runs"
 UPLOADS_DIR = WORKSPACE_ROOT / "uploads"

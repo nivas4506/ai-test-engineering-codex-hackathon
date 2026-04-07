@@ -92,21 +92,55 @@ flowchart LR
 
 ---
 
-## Quick Start
+## Installation & Usage
+
+### 📦 Install as a Package
+You can now install this tool as a Python package. This will provide the `ai-test-engineer` command in your terminal.
 
 ```powershell
+# Clone the repository
+git clone https://github.com/nivas4506/ai-test-engineering-codex-hackathon.git
+cd ai-test-engineering-codex-hackathon
+
+# (Optional) Create a virtual environment
 python -m venv .venv
 .venv\Scripts\Activate.ps1
+
+# Install the package in editable mode
+pip install -e .
+```
+
+### 🚀 CLI Usage
+Once installed, you can use the `ai-test-engineer` command to manage the application:
+
+```powershell
+# Initialize the database and workspace
+ai-test-engineer init
+
+# Start the server (default: http://127.0.0.1:8000)
+ai-test-engineer run
+
+# Start in development mode (with auto-reload)
+ai-test-engineer run --dev
+
+# Run on a specific host/port
+ai-test-engineer run --host 0.0.0.0 --port 9000
+```
+
+---
+
+## Traditional Start (Developer Mode)
+
+If you prefer running without installing the package:
+
+```powershell
 pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
 Open locally:
-
 - `http://127.0.0.1:8000/`
 - `http://127.0.0.1:8000/login`
-- `http://127.0.0.1:8000/reports`
-- `http://127.0.0.1:8000/profile`
 
 ---
 
@@ -260,3 +294,15 @@ This repo intentionally keeps:
 ## Status
 
 > Active prototype with live deployment, authenticated dashboard, AI model selection, externalized testing architecture, durable upload recovery, and CI-ready execution pipeline.
+
+---
+
+## 🚀 One-Command Setup
+
+For the fastest setup experience, use the integrated CLI tool:
+
+```powershell
+pip install -e .
+ai-test-engineer init
+ai-test-engineer run
+```
